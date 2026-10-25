@@ -1,0 +1,274 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap');
+
+:root {
+  /* Design Tokens from Stitch 'Serene Academic Reserve' */
+  --primary: #8b484f;
+  --primary-container: #a85f66;
+  --on-primary: #ffffff;
+  --on-primary-container: #fffbff;
+  --primary-fixed: #ffdadb;
+  --primary-fixed-dim: #ffb2b8;
+  --on-primary-fixed: #3a0811;
+  --on-primary-fixed-variant: #72333a;
+
+  --secondary: #7a5558;
+  --secondary-container: #ffced2;
+  --on-secondary: #ffffff;
+  --on-secondary-container: #7a5559;
+  --secondary-fixed: #ffd9dc;
+  --secondary-fixed-dim: #eabbbf;
+  --on-secondary-fixed: #2e1317;
+  --on-secondary-fixed-variant: #5f3e41;
+
+  --tertiary: #3f644a;
+  --tertiary-container: #577d61;
+  --on-tertiary: #ffffff;
+  --on-tertiary-container: #f6fff4;
+  --tertiary-fixed: #c3edcb;
+  --tertiary-fixed-dim: #a8d0b0;
+  --on-tertiary-fixed: #00210e;
+  --on-tertiary-fixed-variant: #2a4e36;
+
+  --surface: #fff7f9;
+  --surface-dim: #e0d8db;
+  --surface-bright: #fff7f9;
+  --surface-container-lowest: #ffffff;
+  --surface-container-low: #faf1f5;
+  --surface-container: #f4ecef;
+  --surface-container-high: #efe6e9;
+  --surface-container-highest: #e9e0e4;
+  --on-surface: #1e1a1d;
+  --on-surface-variant: #534344;
+
+  --outline: #857373;
+  --outline-variant: #d8c1c2;
+  --error: #ba1a1a;
+  --error-container: #ffdad6;
+  --on-error: #ffffff;
+  --on-error-container: #93000a;
+
+  --inverse-surface: #332f32;
+  --inverse-on-surface: #f7eef2;
+  --inverse-primary: #ffb2b8;
+
+  /* Spacing */
+  --space-xs: 0.25rem;
+  --space-sm: 0.5rem;
+  --space-md: 1rem;
+  --space-lg: 1.5rem;
+  --space-xl: 2.5rem;
+  --gutter: 1rem;
+  --gutter-desktop: 1.5rem;
+  --margin: 1rem;
+  --margin-tablet: 2rem;
+  --margin-desktop: 3rem;
+
+  /* Border Radii */
+  --radius-sm: 0.25rem;
+  --radius-default: 0.5rem;
+  --radius-md: 0.75rem;
+  --radius-lg: 1rem;
+  --radius-xl: 1.5rem;
+  --radius-full: 9999px;
+
+  /* Elevation Shadows */
+  --shadow-xs: 0 1px 2px rgba(48, 41, 43, 0.05);
+  --shadow-sm: 0 1px 3px rgba(48, 41, 43, 0.04), 0 4px 12px rgba(48, 41, 43, 0.02);
+  --shadow-md: 0 4px 12px rgba(48, 41, 43, 0.06), 0 1px 4px rgba(48, 41, 43, 0.04);
+  --shadow-lg: 0 8px 24px rgba(48, 41, 43, 0.08);
+  --shadow-xl: 0 16px 36px rgba(48, 41, 43, 0.14);
+}
+
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  background-color: var(--surface);
+  color: var(--on-surface);
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Material Symbols styling */
+.material-symbols-outlined {
+  font-family: 'Material Symbols Outlined';
+  font-weight: normal;
+  font-style: normal;
+  display: inline-block;
+  line-height: 1;
+  text-transform: none;
+  letter-spacing: normal;
+  word-wrap: normal;
+  white-space: nowrap;
+  direction: ltr;
+  vertical-align: middle;
+  font-feature-settings: 'liga';
+}
+
+/* Typography styles matching Stitch specs */
+.headline-xl {
+  font-size: 36px;
+  line-height: 44px;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+}
+
+.headline-lg {
+  font-size: 24px;
+  line-height: 32px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+.headline-md {
+  font-size: 20px;
+  line-height: 28px;
+  font-weight: 600;
+}
+
+.headline-sm {
+  font-size: 16px;
+  line-height: 24px;
+  font-weight: 600;
+}
+
+.body-lg {
+  font-size: 16px;
+  line-height: 24px;
+  font-weight: 400;
+}
+
+.body-md {
+  font-size: 14px;
+  line-height: 20px;
+  font-weight: 400;
+}
+
+.body-sm {
+  font-size: 12px;
+  line-height: 16px;
+  font-weight: 400;
+}
+
+.label-lg {
+  font-size: 14px;
+  line-height: 20px;
+  font-weight: 500;
+}
+
+.label-md {
+  font-size: 12px;
+  line-height: 16px;
+  font-weight: 500;
+  letter-spacing: 0.01em;
+}
+
+.label-sm {
+  font-size: 11px;
+  line-height: 14px;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+}
+
+/* Utility Animations */
+@keyframes pulseGlow {
+  0%, 100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.85;
+    transform: scale(1.05);
+  }
+}
+
+.animate-pulse-slow {
+  animation: pulseGlow 2s infinite ease-in-out;
+}
+
+@keyframes ping {
+  75%, 100% {
+    transform: scale(2);
+    opacity: 0;
+  }
+}
+
+.animate-ping-once {
+  animation: ping 1.5s cubic-bezier(0, 0, 0.2, 1) infinite;
+}
+
+/* Button & Interactive styles */
+.btn-primary {
+  background-color: var(--primary);
+  color: var(--on-primary);
+  border: none;
+  border-radius: var(--radius-default);
+  padding: 0.5rem 1rem;
+  font-weight: 500;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  transition: background-color 0.15s ease, transform 0.1s ease;
+}
+
+.btn-primary:hover {
+  background-color: var(--primary-container);
+}
+
+.btn-secondary {
+  background-color: var(--surface-container-lowest);
+  color: var(--on-surface);
+  border: 1px solid var(--outline-variant);
+  border-radius: var(--radius-default);
+  padding: 0.5rem 1rem;
+  font-weight: 500;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  transition: background-color 0.15s ease;
+}
+
+.btn-secondary:hover {
+  background-color: var(--surface-container-low);
+}
+
+/* Blueprint canvas grid lines */
+.blueprint-grid {
+  background-image: radial-gradient(var(--on-surface) 1px, transparent 1px);
+  background-size: 16px 16px;
+  opacity: 0.04;
+}
+
+/* Scrollbar customizations */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: var(--outline-variant);
+  border-radius: 9999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--outline);
+}
+
+/* Strict square seat box rules - guarantees no stretching into bars */
+.seat-square-box {
+  box-sizing: border-box !important;
+  aspect-ratio: 1 / 1 !important;
+  flex-shrink: 0 !important;
+  flex-grow: 0 !important;
+}
