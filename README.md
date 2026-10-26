@@ -1,19 +1,29 @@
-# React + Vite
+📚 BookSpot — Smart Library Seat Booking System
 
-This template provides a minimal setup to get React working in Vite with HMR and some Oxlint rules.
+BookSpot is a web-based library seat reservation system that allows students to check seat availability and reserve their preferred seats in advance. It aims to make library visits more convenient, reduce the time spent searching for seats, and help students maintain a consistent study routine.
 
-Currently, two official plugins are available:
+✨ Features
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+- Student Authentication — Register and log in using college credentials.
 
-## React Compiler
+- Interactive Seat Map — View the library layout and select seats visually.
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+- Real-Time Seat Availability — Check which seats are available or booked for a selected time slot.
 
-## Expanding the Oxlint configuration
+- Advance Seat Booking — Reserve a preferred seat for a specific duration.
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and Oxlint's TypeScript related rules in your project.
+- Time-Slot Management — Book seats while respecting library operating hours and booking limits.
 
+- Double-Booking Prevention — Prevent overlapping reservations for the same seat.
 
-FloorPlanView(seats array from Data) -> FloorPlanMap(zone A,B,C all filtered) -> mapped to Seatnode component 
+- My Bookings — View upcoming and previous reservations.
+
+- Booking Cancellation — Cancel reservations when plans change.
+
+- Preferred Seats — Make it easier to reserve favourite seats.
+
+🎯 Problem Statement
+
+Students often visit the library without knowing whether seats are available. They may waste time searching for a place to study or find that their preferred seats are already occupied.
+
+BookSpot addresses this problem by providing a digital seat reservation system that helps students check availability before arriving and plan their study sessions more effectively.
