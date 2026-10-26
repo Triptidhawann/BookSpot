@@ -24,6 +24,18 @@ export default function DashboardView({ onNavigate, user }) {
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
   const [toastData, setToastData] = useState({ show: false, title: '', subtitle: '' });
 
+  useEffect(()=>{
+    const getBookedSeat= async()=>{
+      try{
+        const resp = axios.get("http://localhost:2007/getBookedSeat",{params:rollNo})
+        console.log(resp);
+      }
+      catch(err){
+        console.log(err);
+      }
+
+    }
+  },[])
   const showToast = (title, subtitle) => {
     setToastData({ show: true, title, subtitle });
     setTimeout(() => {
@@ -296,7 +308,7 @@ export default function DashboardView({ onNavigate, user }) {
                 </div>
 
                 <div style={{ margin: '10px 0' }}>
-                  <div className="headline-xl" style={{ fontSize: '42px', lineHeight: 1.05, fontWeight: 700, color: 'var(--primary)' }}>
+                  <div className="headline-xl" style={{ fontSize: '35px', lineHeight: 1.05, fontWeight: 700, color: 'var(--primary)' }}>
                     {activeBooking ? `Seat ${activeBooking.seatId}` : 'No Active Booking'}
                   </div>
                   {activeBooking && (
@@ -362,7 +374,7 @@ export default function DashboardView({ onNavigate, user }) {
                 </div>
 
                 <div style={{ margin: '10px 0' }}>
-                  <div className="headline-xl" style={{ fontSize: '42px', lineHeight: 1.05, fontWeight: 700, color: 'var(--on-surface)' }}>
+                  <div className="headline-xl" style={{ fontSize: '35px', lineHeight: 1.05, fontWeight: 700, color: 'var(--on-surface)' }}>
                     {upcoming.length} Scheduled
                   </div>
                   <div className="body-sm" style={{ color: 'var(--on-surface-variant)', marginTop: '8px', fontWeight: 500 }}>

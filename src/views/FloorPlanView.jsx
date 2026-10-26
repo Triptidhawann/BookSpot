@@ -91,12 +91,14 @@ export default function FloorPlanView({ onNavigate, onBookingConfirmed, initialS
 
     setIsBooking(true);
     try {
-      const response = await axios.post('/api/bookSeat', {
+      const response = await axios.post('http://localhost:2007/bookSeat', {
         seatNo: bookingDetails.seatNo,
         zone: bookingDetails.zone,
         roll: user.roll_no,
         name: user.name,
         duration: bookingDetails.duration,
+        startTime: bookingDetails.startTime,
+        endTime: bookingDetails.endTime,
         status: 'CONFIRMED'
       });
 

@@ -87,18 +87,51 @@ app.post("/bookSeat", async (req, res) => {
     const rollNo = req.body?.roll;
     const name =req.body?.name;
     const duration = req.body?.duration;
+    const requestedStartTime = req.body?.startTime;
+    const requestedEndTime = req.body?.endTime;
     const bookingStatus = "CONFIRMED";
     const seatStatus = "booked";
 
-    if (!seatNo || !zone || !rollNo || !name || !Number.isFinite(duration) || duration <= 0) {
+    try {
+        const db = mysql.promise();
+        const [rows] = await db.query(
+            "SELECT booking_id FROM bookings WHERE student_id = ? AND status = ?",
+            [rollNo, "CONFIRMED"]
+        );
+        if(rows.length > 0){
+            return res.status(400).json({
+                status:false,
+                msg:"You can't book more than 1 seat"
+            })
+        }
+    } catch (err) {
+        console.error("Existing booking check failed:", err.message);
+    }
+
+    if (!seatNo || !zone || !rollNo || !name || !Number.isFinite(duration) || duration <= 0 || !requestedStartTime || !requestedEndTime) {
         return res.status(400).json({
             status: false,
             msg: "Seat, zone, student, and a valid duration are required"
         });
     }
 
-    const startTime = new Date();
-    const endTime = new Date(startTime.getTime() + duration * 60 * 60 * 1000);
+    const parseTime = (time) => {
+        const match = /^(\d{1,2}):(\d{2})\s(AM|PM)$/i.exec(time);
+        if (!match) return null;
+        let hours = Number(match[1]);
+        const minutes = Number(match[2]);
+        if (hours < 1 || hours > 12 || minutes > 59) return null;
+        if (match[3].toUpperCase() === "PM" && hours !== 12) hours += 12;
+        if (match[3].toUpperCase() === "AM" && hours === 12) hours = 0;
+        const result = new Date();
+        result.setHours(hours, minutes, 0, 0);
+        return result;
+    };
+    const startTime = parseTime(requestedStartTime);
+    const endTime = parseTime(requestedEndTime);
+    if (!startTime || !endTime || endTime <= startTime) {
+        return res.status(400).json({ status: false, msg: "Invalid start or end time" });
+    }
     const db = mysql.promise();
 
     try {
