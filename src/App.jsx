@@ -9,6 +9,14 @@ import './App.css';
 export default function App() {
   const [activeView, setActiveView] = useState('landing');
   const [selectedSeatFromLanding, setSelectedSeatFromLanding] = useState(null);
+  const [loggedInUser, setLoggedInUser] = useState(() => {
+    try {
+      const savedUser = localStorage.getItem('bookspot_user');
+      return savedUser ? JSON.parse(savedUser) : null;
+    } catch {
+      return null;
+    }
+  });
 
   const handleNavigate = (view) => {
     setActiveView(view);
@@ -38,7 +46,10 @@ export default function App() {
       )}
 
       {(activeView === 'signin' || activeView === 'login') && (
-        <SignInView onNavigate={handleNavigate} />
+        <SignInView
+          onNavigate={handleNavigate}
+          onAuthenticated={setLoggedInUser}
+        />
       )}
 
       {activeView === 'signup' && (
@@ -49,7 +60,7 @@ export default function App() {
         activeView === 'my-bookings' ||
         activeView === 'booking-history' ||
         activeView === 'profile') && (
-        <DashboardView onNavigate={handleNavigate} />
+        <DashboardView onNavigate={handleNavigate} user={loggedInUser} />
       )}
     </div>
   );

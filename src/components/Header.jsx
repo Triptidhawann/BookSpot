@@ -5,7 +5,8 @@ export default function Header({
   onOpenMobileSidebar,
   searchQuery,
   onSearchChange,
-  onNavigate
+  onNavigate,
+  user = currentUser
 }) {
   return (
     <header
@@ -147,15 +148,15 @@ export default function Header({
         >
           <div className="desktop-only" style={{ textAlign: 'right' }}>
             <div className="label-lg" style={{ fontWeight: 600, color: 'var(--on-surface)', lineHeight: 1.2 }}>
-              {currentUser.name}
+              {user.name}
             </div>
             <div className="label-sm" style={{ color: 'var(--on-surface-variant)' }}>
-              {currentUser.role}
+              {user.role}
             </div>
           </div>
           <img
-            src={currentUser.avatar}
-            alt={currentUser.name}
+            src={user.avatar}
+            alt={user.name}
             style={{
               width: '34px',
               height: '34px',

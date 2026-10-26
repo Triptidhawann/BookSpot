@@ -1,37 +1,63 @@
 import React, { useState } from 'react';
 import signinIllustration from '../assets/signin_illustration.jpg';
+import axios from 'axios';
 
-export default function SignInView({ onNavigate }) {
+export default function SignInView({ onNavigate, onAuthenticated }) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [toastMessage, setToastMessage] = useState('');
+  const [errorMessage, setErrorMessage] = useState('');
 
   const handleSsoClick = () => {
-    setToastMessage('Redirecting to Institutional Single Sign-On (Shibboleth / CAS)...');
-    setTimeout(() => {
-      setIsLoading(true);
-      setTimeout(() => {
-        setIsLoading(false);
-        setToastMessage('');
-        onNavigate('dashboard');
-      }, 1000);
-    }, 1200);
+    // Fill demo student account and authenticate
+    setEmail('TEST_01');
+    setPassword('password123');
+    setToastMessage('Prefilled institutional credentials for demo student (TEST_01). Click Sign In below.');
+    setErrorMessage('');
   };
 
-  const handleFormSubmit = (e) => {
+  const handleFormSubmit = async (e) => {
     e.preventDefault();
     setIsLoading(true);
     setToastMessage('');
+    setErrorMessage('');
 
-    setTimeout(() => {
+    const rollToSubmit = email.trim();
+
+    try {
+      const response = await axios.post('/api/login', {
+        roll_no: rollToSubmit,
+        password
+      });
+
+      const data = response.data;
+
+      if (data.status) {
+        setToastMessage(data.msg || 'Login successful! Redirecting to student dashboard...');
+        // Store authenticated user session
+        if (data.user) {
+          localStorage.setItem('bookspot_user', JSON.stringify(data.user));
+          onAuthenticated?.(data.user);
+        } else {
+          const fallbackUser = { roll_no: rollToSubmit, name: 'Student ' + rollToSubmit };
+          localStorage.setItem('bookspot_user', JSON.stringify(fallbackUser));
+          onAuthenticated?.(fallbackUser);
+        }
+
+        setTimeout(() => {
+          onNavigate('dashboard');
+        }, 1200);
+      } else {
+        setErrorMessage(data.msg || 'Invalid roll number or password. Please try again.');
+      }
+    } catch (err) {
+      console.error('Login error:', err);
+      setErrorMessage(err.response?.data?.msg || 'Could not connect to the authentication server. Please try again.');
+    } finally {
       setIsLoading(false);
-      setToastMessage('Authentication successful! Loading your reserved carrels...');
-      setTimeout(() => {
-        onNavigate('dashboard');
-      }, 1000);
-    }, 1200);
+    }
   };
 
   return (
@@ -445,7 +471,7 @@ export default function SignInView({ onNavigate }) {
                   {/* Email */}
                   <div>
                     <label
-                      htmlFor="signin-email"
+                     
                       className="label-sm"
                       style={{ display: 'block', color: 'var(--on-surface)', fontWeight: 600, marginBottom: '6px' }}
                     >
@@ -466,7 +492,7 @@ export default function SignInView({ onNavigate }) {
                       </span>
                       <input
                         id="signin-email"
-                        type="email"
+                        type="text"
                         required
                         value={email}
                         onChange={(e) => setEmail(e.target.value)}
@@ -611,6 +637,29 @@ export default function SignInView({ onNavigate }) {
                     )}
                   </button>
                 </form>
+
+                {/* Error Message */}
+                {errorMessage && (
+                  <div
+                    style={{
+                      marginTop: '16px',
+                      padding: '10px 14px',
+                      borderRadius: 'var(--radius-default)',
+                      backgroundColor: 'var(--error-container)',
+                      color: 'var(--on-error-container)',
+                      fontSize: '12px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '8px',
+                      border: '1px solid rgba(186, 26, 26, 0.3)'
+                    }}
+                  >
+                    <span className="material-symbols-outlined" style={{ fontSize: '18px', color: 'var(--error)' }}>
+                      error
+                    </span>
+                    <span>{errorMessage}</span>
+                  </div>
+                )}
 
                 {/* Toast Notification message */}
                 {toastMessage && (

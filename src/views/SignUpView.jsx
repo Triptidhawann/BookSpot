@@ -1,60 +1,53 @@
 import React, { useState } from 'react';
 import signupIllustration from '../assets/signup_illustration.jpg';
+import axios from 'axios';
+
 
 export default function SignUpView({ onNavigate }) {
-  const [fullName, setFullName] = useState('');
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [showPassword, setShowPassword] = useState(false);
-  const [rememberDevice, setRememberDevice] = useState(true);
+  const [formData, setFormData] = useState({ name: '', roll_no: '', password: '' });
+  // const [rememberDevice, setRememberDevice] = useState(true);
   const [isLoading, setIsLoading] = useState(false);
   const [toastMessage, setToastMessage] = useState('');
-
-  // Password strength calculation
-  const getPasswordStrength = (val) => {
-    if (!val) return 0;
-    let strength = 0;
-    if (val.length >= 8) strength++;
-    if (/[A-Z]/.test(val)) strength++;
-    if (/[0-9]/.test(val)) strength++;
-    if (/[^A-Za-z0-9]/.test(val)) strength++;
-    return strength;
-  };
-
-  const strength = getPasswordStrength(password);
-  const strengthLabels = [
-    'Weak - Add numbers & symbols',
-    'Moderate - Add uppercase letters',
-    'Good strength',
-    'Optimal academic security'
-  ];
-  const strengthColors = ['#ba1a1a', '#7a5558', '#8b484f', '#3f644a'];
+  const [errorMessage, setErrorMessage] = useState('');
+ 
 
   const handleSsoClick = () => {
-    setToastMessage('Connecting to Institutional SSO (Shibboleth / CAS)...');
-    setTimeout(() => {
-      setIsLoading(true);
-      setTimeout(() => {
-        setIsLoading(false);
-        setToastMessage('');
-        onNavigate('dashboard');
-      }, 1200);
-    }, 1000);
+    setFormData({
+      name: 'Alex Morgan',
+      roll_no: 'CS-2024-048',
+      password: 'CampusPass@2025'
+    });
+    setToastMessage('Prefilled institutional SSO credentials. Click Create Student Account to finalize.');
+    setErrorMessage('');
   };
 
-  const handleFormSubmit = (e) => {
+  function handleChange(e){
+      setFormData((previous) => ({
+        ...previous,
+        [e.target.name]: e.target.value
+      }));
+  };
+
+  const handleFormSubmit = async (e) => {
     e.preventDefault();
     setIsLoading(true);
     setToastMessage('');
+    setErrorMessage('');
 
-    setTimeout(() => {
+    try {
+      const response = await axios.post('/api/register', formData);
+      setToastMessage(response.data.msg || 'Account created successfully. Redirecting to sign in...');
+      setFormData({ name: '', roll_no: '', password: '' });
+      setTimeout(() => onNavigate('signin'), 1200);
+    } catch (err) {
+      setErrorMessage(err.response?.data?.msg || 'Could not create your account. Please try again.');
+    } finally {
       setIsLoading(false);
-      setToastMessage('Account created successfully! Preparing your student workspace...');
-      setTimeout(() => {
-        onNavigate('dashboard');
-      }, 1200);
-    }, 1400);
+    }
   };
+
+
+ 
 
   return (
     <div
@@ -433,8 +426,9 @@ export default function SignUpView({ onNavigate }) {
                         id="signup-name"
                         type="text"
                         required
-                        value={fullName}
-                        onChange={(e) => setFullName(e.target.value)}
+                        value={formData.name}
+                        name = "name"
+                        onChange={handleChange}
                         placeholder="e.g. Alex Morgan"
                         style={{
                           width: '100%',
@@ -473,10 +467,11 @@ export default function SignUpView({ onNavigate }) {
                       </span>
                       <input
                         id="signup-email"
-                        type="email"
+                        type="text"
+                        name="roll_no"
                         required
-                        value={email}
-                        onChange={(e) => setEmail(e.target.value)}
+                        value={formData.roll_no}
+                        onChange={handleChange}
                         placeholder="e.g. alex.morgan@univ.edu"
                         style={{
                           width: '100%',
@@ -515,10 +510,11 @@ export default function SignUpView({ onNavigate }) {
                       </span>
                       <input
                         id="signup-password"
-                        type={showPassword ? 'text' : 'password'}
+                        type="password"
                         required
-                        value={password}
-                        onChange={(e) => setPassword(e.target.value)}
+                        name = "password"
+                        value={formData.password}
+                        onChange={handleChange}
                         placeholder="At least 8 characters"
                         style={{
                           width: '100%',
@@ -558,64 +554,15 @@ export default function SignUpView({ onNavigate }) {
                         aria-label="Toggle password visibility"
                       >
                         <span className="material-symbols-outlined" style={{ fontSize: '18px' }}>
-                          {showPassword ? 'visibility_off' : 'visibility'}
+                         
                         </span>
                       </button>
                     </div>
 
-                    {/* Dynamic Password Strength Meter */}
-                    {password && (
-                      <div style={{ marginTop: '8px' }}>
-                        <div style={{ display: 'flex', gap: '6px', height: '4px' }}>
-                          {[0, 1, 2, 3].map((idx) => (
-                            <div
-                              key={idx}
-                              style={{
-                                flex: 1,
-                                borderRadius: '9999px',
-                                backgroundColor: idx < strength ? strengthColors[strength - 1] : 'var(--surface-container-high)',
-                                transition: 'background-color 0.3s ease'
-                              }}
-                            />
-                          ))}
-                        </div>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '4px' }}>
-                          <span
-                            style={{
-                              fontSize: '11px',
-                              fontWeight: 500,
-                              color: strength > 0 ? strengthColors[strength - 1] : 'var(--on-surface-variant)'
-                            }}
-                          >
-                            {strength > 0 ? strengthLabels[strength - 1] : 'Strength indicator'}
-                          </span>
-                        </div>
-                      </div>
-                    )}
+                   
                   </div>
 
-                  {/* Remember device & Guidelines */}
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingTop: '2px' }}>
-                    <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', fontSize: '12px', color: 'var(--on-surface-variant)' }}>
-                      <input
-                        type="checkbox"
-                        checked={rememberDevice}
-                        onChange={(e) => setRememberDevice(e.target.checked)}
-                        style={{ accentColor: 'var(--primary)' }}
-                      />
-                      <span>Remember this device for 30 days</span>
-                    </label>
-                    <a
-                      href="#guidelines"
-                      onClick={(e) => {
-                        e.preventDefault();
-                        onNavigate('landing');
-                      }}
-                      style={{ fontSize: '11px', color: 'var(--primary)', textDecoration: 'none', fontWeight: 600 }}
-                    >
-                      ID Guidelines
-                    </a>
-                  </div>
+                
 
                   {/* Submit Button */}
                   <button
@@ -653,6 +600,29 @@ export default function SignUpView({ onNavigate }) {
                     )}
                   </button>
                 </form>
+
+                {/* Error Message */}
+                {errorMessage && (
+                  <div
+                    style={{
+                      marginTop: '14px',
+                      padding: '10px 14px',
+                      borderRadius: 'var(--radius-default)',
+                      backgroundColor: 'var(--error-container)',
+                      color: 'var(--on-error-container)',
+                      fontSize: '12px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '8px',
+                      border: '1px solid rgba(186, 26, 26, 0.3)'
+                    }}
+                  >
+                    <span className="material-symbols-outlined" style={{ fontSize: '18px', color: 'var(--error)' }}>
+                      error
+                    </span>
+                    <span>{errorMessage}</span>
+                  </div>
+                )}
 
                 {/* Toast Notification message */}
                 {toastMessage && (

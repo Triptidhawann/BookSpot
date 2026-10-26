@@ -11,7 +11,14 @@ import {
   studyHistory
 } from '../data/mockData';
 
-export default function DashboardView({ onNavigate }) {
+export default function DashboardView({ onNavigate, user }) {
+  const dashboardUser = {
+    ...currentUser,
+    ...(user || {}),
+    rollNo: user?.roll_no || currentUser.rollNo,
+    role: user ? 'Student' : currentUser.role,
+    semester: user ? 'BookSpot Student' : currentUser.semester
+  };
   const [activeBooking, setActiveBooking] = useState(initialActiveBooking);
   const [upcoming, setUpcoming] = useState(initialUpcoming);
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
@@ -55,6 +62,7 @@ export default function DashboardView({ onNavigate }) {
         <Header
           onOpenMobileSidebar={() => setIsMobileSidebarOpen(true)}
           onNavigate={onNavigate}
+          user={dashboardUser}
         />
 
         {/* Content Body */}
@@ -75,7 +83,7 @@ export default function DashboardView({ onNavigate }) {
                       fontWeight: 600
                     }}
                   >
-                    {currentUser.semester}
+                    {dashboardUser.semester}
                   </span>
                   <span style={{ color: 'var(--on-surface-variant)', fontSize: '12px', display: 'flex', alignItems: 'center', gap: '6px' }}>
                     <span style={{ width: '6px', height: '6px', borderRadius: '50%', backgroundColor: 'var(--tertiary)' }} />
@@ -84,7 +92,7 @@ export default function DashboardView({ onNavigate }) {
                 </div>
 
                 <h1 className="headline-xl" style={{ color: 'var(--on-surface)', letterSpacing: '-0.02em', fontWeight: 700 }}>
-                  Good morning, {currentUser.name.split(' ')[0]}!
+                  Good morning, {dashboardUser.name.split(' ')[0]}!
                 </h1>
                 <p className="body-md" style={{ color: 'var(--on-surface-variant)', marginTop: '4px' }}>
                   Central University Library • Main Campus • Academic Year 2024–25
@@ -130,20 +138,69 @@ export default function DashboardView({ onNavigate }) {
               </div>
             </section>
 
+            {/* Logged-in student details */}
+            <section
+              style={{
+                display: 'flex',
+                flexWrap: 'wrap',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                gap: 'var(--space-md)',
+                padding: 'var(--space-md) var(--space-lg)',
+                backgroundColor: 'var(--surface-container-lowest)',
+                borderRadius: 'var(--radius-xl)',
+                border: '1px solid rgba(216, 193, 194, 0.25)',
+                boxShadow: 'var(--shadow-sm)'
+              }}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                <div
+                  style={{
+                    width: '42px',
+                    height: '42px',
+                    borderRadius: '50%',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    backgroundColor: 'var(--secondary-container)',
+                    color: 'var(--primary)',
+                    fontWeight: 700,
+                    fontSize: '16px'
+                  }}
+                >
+                  {dashboardUser.name.charAt(0).toUpperCase()}
+                </div>
+                <div>
+                  <div style={{ color: 'var(--on-surface)', fontWeight: 700 }}>
+                    {dashboardUser.name}
+                  </div>
+                  <div style={{ color: 'var(--on-surface-variant)', fontSize: '12px' }}>
+                    {dashboardUser.role}
+                  </div>
+                </div>
+              </div>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '18px', color: 'var(--on-surface-variant)', fontSize: '12px' }}>
+                <span><strong style={{ color: 'var(--on-surface)' }}>Campus ID:</strong> {dashboardUser.rollNo}</span>
+                {dashboardUser.email && (
+                  <span><strong style={{ color: 'var(--on-surface)' }}>Email:</strong> {dashboardUser.email}</span>
+                )}
+              </div>
+            </section>
+
             {/* 3-Column Bento Stat Cards */}
             <section
               style={{
                 display: 'grid',
                 gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
-                gap: 'var(--space-md)'
+                gap: '12px'
               }}
             >
               {/* Stat 1: Live Library Capacity */}
               <div
                 style={{
                   backgroundColor: 'var(--surface-container-lowest)',
-                  padding: 'var(--space-lg)',
-                  borderRadius: 'var(--radius-xl)',
+                  padding: '18px 20px',
+                  borderRadius: '18px',
                   boxShadow: 'var(--shadow-sm)',
                   display: 'flex',
                   flexDirection: 'column',
@@ -157,7 +214,7 @@ export default function DashboardView({ onNavigate }) {
                   </span>
                   <span
                     style={{
-                      padding: '6px',
+                      padding: '5px',
                       backgroundColor: 'var(--surface-container-low)',
                       color: 'var(--on-surface-variant)',
                       borderRadius: 'var(--radius-default)',
@@ -166,13 +223,13 @@ export default function DashboardView({ onNavigate }) {
                       justifyContent: 'center'
                     }}
                   >
-                    <span className="material-symbols-outlined" style={{ fontSize: '18px' }}>domain</span>
+                    <span className="material-symbols-outlined" style={{ fontSize: '17px' }}>domain</span>
                   </span>
                 </div>
 
-                <div style={{ margin: 'var(--space-md) 0' }}>
+                <div style={{ margin: '10px 0' }}>
                   <div style={{ display: 'flex', alignItems: 'baseline', gap: '6px' }}>
-                    <span className="headline-xl" style={{ fontWeight: 700, color: 'var(--on-surface)' }}>
+                    <span className="headline-xl" style={{ fontSize: '42px', lineHeight: 1.05, fontWeight: 700, color: 'var(--on-surface)' }}>
                       {campusStatus.availableSeats}
                     </span>
                     <span className="body-md" style={{ color: 'var(--on-surface-variant)' }}>
@@ -183,7 +240,7 @@ export default function DashboardView({ onNavigate }) {
                     <span
                       className="label-sm"
                       style={{
-                        padding: '3px 10px',
+                        padding: '3px 9px',
                         borderRadius: 'var(--radius-full)',
                         backgroundColor: 'var(--tertiary-fixed)',
                         color: 'var(--on-tertiary-fixed)',
@@ -208,8 +265,8 @@ export default function DashboardView({ onNavigate }) {
               <div
                 style={{
                   backgroundColor: 'var(--surface-container-lowest)',
-                  padding: 'var(--space-lg)',
-                  borderRadius: 'var(--radius-xl)',
+                  padding: '18px 20px',
+                  borderRadius: '18px',
                   boxShadow: 'var(--shadow-sm)',
                   display: 'flex',
                   flexDirection: 'column',
@@ -225,7 +282,7 @@ export default function DashboardView({ onNavigate }) {
                   </span>
                   <span
                     style={{
-                      padding: '6px',
+                      padding: '5px',
                       backgroundColor: 'var(--secondary-container)',
                       color: 'var(--primary)',
                       borderRadius: 'var(--radius-default)',
@@ -234,12 +291,12 @@ export default function DashboardView({ onNavigate }) {
                       justifyContent: 'center'
                     }}
                   >
-                    <span className="material-symbols-outlined" style={{ fontSize: '18px' }}>chair_alt</span>
+                    <span className="material-symbols-outlined" style={{ fontSize: '17px' }}>chair_alt</span>
                   </span>
                 </div>
 
-                <div style={{ margin: 'var(--space-md) 0' }}>
-                  <div className="headline-xl" style={{ fontWeight: 700, color: 'var(--primary)' }}>
+                <div style={{ margin: '10px 0' }}>
+                  <div className="headline-xl" style={{ fontSize: '42px', lineHeight: 1.05, fontWeight: 700, color: 'var(--primary)' }}>
                     {activeBooking ? `Seat ${activeBooking.seatId}` : 'No Active Booking'}
                   </div>
                   {activeBooking && (
@@ -247,7 +304,7 @@ export default function DashboardView({ onNavigate }) {
                       <span
                         className="label-sm"
                         style={{
-                          padding: '3px 10px',
+                          padding: '3px 9px',
                           borderRadius: 'var(--radius-full)',
                           backgroundColor: 'var(--primary-fixed)',
                           color: 'var(--on-primary-fixed-variant)',
@@ -276,8 +333,8 @@ export default function DashboardView({ onNavigate }) {
               <div
                 style={{
                   backgroundColor: 'var(--surface-container-lowest)',
-                  padding: 'var(--space-lg)',
-                  borderRadius: 'var(--radius-xl)',
+                  padding: '18px 20px',
+                  borderRadius: '18px',
                   boxShadow: 'var(--shadow-sm)',
                   display: 'flex',
                   flexDirection: 'column',
@@ -291,7 +348,7 @@ export default function DashboardView({ onNavigate }) {
                   </span>
                   <span
                     style={{
-                      padding: '6px',
+                      padding: '5px',
                       backgroundColor: 'var(--surface-container-low)',
                       color: 'var(--on-surface-variant)',
                       borderRadius: 'var(--radius-default)',
@@ -300,12 +357,12 @@ export default function DashboardView({ onNavigate }) {
                       justifyContent: 'center'
                     }}
                   >
-                    <span className="material-symbols-outlined" style={{ fontSize: '18px' }}>event_upcoming</span>
+                    <span className="material-symbols-outlined" style={{ fontSize: '17px' }}>event_upcoming</span>
                   </span>
                 </div>
 
-                <div style={{ margin: 'var(--space-md) 0' }}>
-                  <div className="headline-xl" style={{ fontWeight: 700, color: 'var(--on-surface)' }}>
+                <div style={{ margin: '10px 0' }}>
+                  <div className="headline-xl" style={{ fontSize: '42px', lineHeight: 1.05, fontWeight: 700, color: 'var(--on-surface)' }}>
                     {upcoming.length} Scheduled
                   </div>
                   <div className="body-sm" style={{ color: 'var(--on-surface-variant)', marginTop: '8px', fontWeight: 500 }}>
