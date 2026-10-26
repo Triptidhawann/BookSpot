@@ -177,6 +177,39 @@ app.get("/getSeatsData",(req,res)=>{
     });
 })
 
+app.get("/getBookedSeat",(req,res)=>{
+    let {rollNo} = req.query;
+
+try {
+    mysql.query(
+        "SELECT * FROM bookings WHERE student_id = ?",
+        [rollNo],
+        (err, result) => {
+            if (err) {
+                console.log(err);
+                return res.status(500).json({
+                    status: false,
+                    msg: "Database error"
+                });
+            }
+
+            return res.status(200).json({
+                status: true,
+                msg: "Successful",
+                bookings: result
+            });
+        }
+    );
+} catch (err) {
+    console.log(err);
+    return res.status(500).json({
+        status: false,
+        msg: "Internal server error"
+    });
+}
+    
+})
+
 app.listen(2007,()=>{
     console.log("Server listening on port 2007")
 })
