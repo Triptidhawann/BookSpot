@@ -21,9 +21,9 @@ mysql.connect((err) => {
 });
 
 app.post("/register", async (req, res) => {
-    const rollNo = typeof req.body?.roll_no === "string" ? req.body.roll_no.trim() : "";
-    const name = typeof req.body?.name === "string" ? req.body.name.trim() : "";
-    const password = typeof req.body?.password === "string" ? req.body.password : "";
+    const rollNo =req.body.roll_no;
+    const name = req.body.name;
+    const password =req.body.password;
 
     if (!rollNo || !name || password.length < 8) {
         return res.status(400).json({
@@ -36,19 +36,11 @@ app.post("/register", async (req, res) => {
         const hash = await bcrypt.hash(password, 10);
         mysql.query(
             "INSERT INTO students (roll_no, name, password) VALUES (?, ?, ?)",
-            [rollNo, name, hash],
-            (err) => {
-                if (err) {
-                    if (err.code === "ER_DUP_ENTRY") {
-                        return res.status(409).json({ status: false, msg: "That roll number is already registered" });
-                    }
-                    console.error("Registration query failed:", err.message);
-                    return res.status(500).json({ status: false, msg: "Unable to create account" });
-                }
-                return res.status(201).json({ status: true, msg: "User registered successfully" });
-            }
-        );
-    } catch (err) {
+            [rollNo, name, hash]),
+           
+                res.status(201).json({ status: true, msg: "User registered successfully" })
+        }       
+    catch (err) {
         console.error("Registration failed:", err.message);
         return res.status(500).json({ status: false, msg: "Unable to create account" });
     }
@@ -89,25 +81,59 @@ const handleLogin = async (req, res) => {
 app.get("/login", handleLogin);
 app.post("/login", handleLogin);
 
-app.post("/bookSeat",(req,res)=>{
+app.post("/bookSeat", async (req, res) => {
+    const seatNo = req.body?.seatId;
+    const zone =req.body?.zone;
+    const rollNo = req.body?.roll;
+    const name =req.body?.name;
+    const duration = req.body?.duration;
+    const bookingStatus = "CONFIRMED";
+    const seatStatus = "occupied";
 
-    let seatId = req.body.seatId;
-    let roll_no = req.body.roll;
-    let name = req.body.name;
-    let start = req.body.start;
-    let end = req.body.end;
-    let status = req.body.status;
-    mysql.query("insert into bookings values(?,?,?,?,?,?,NOW(),NULL)",[seatId,roll_no,name,start,end,status],function(err){
-        if(err == null)
-            res.json({status:true,msg:"Seat reserved successfully"})
-        else 
-            res.json({status:false,err})
-    });
+    if (!seatNo || !zone || !rollNo || !name || !Number.isFinite(duration) || duration <= 0) {
+        return res.status(400).json({
+            status: false,
+            msg: "Seat, zone, student, and a valid duration are required"
+        });
+    }
 
+    const startTime = new Date();
+    const endTime = new Date(startTime.getTime() + duration * 60 * 60 * 1000);
+    const db = mysql.promise();
+
+    try {
+        await db.beginTransaction();
+        await db.query(
+            "INSERT INTO bookings (seatNo, student_id, name, start_time, end_time, status) VALUES (?, ?, ?, ?, ?, ?)",
+            [seatNo, rollNo, name, startTime, endTime, bookingStatus]
+        );
+
+        const [seatResult] = await db.query(
+            "UPDATE seats SET isBooked = ? WHERE seatNo = ? AND zone = ?",
+            [seatStatus, seatNo, zone]
+        );
+
+        if (seatResult.affectedRows === 0) {
+            await db.rollback();
+            return res.status(404).json({
+                status: false,
+                msg: `Seat ${seatNo} was not found in zone ${zone}`
+            });
+        }
+
+        await db.commit();
+        return res.status(201).json({ status: true, msg: "Seat reserved successfully" });
+    } catch (err) {
+        try {
+            await db.rollback();
+        } catch (rollbackError) {
+            console.error("Booking rollback failed:", rollbackError.message);
+        }
+        console.error("Booking failed:", err.message);
+        return res.status(500).json({ status: false, msg: "Unable to reserve seat" });
+    }
 });
 
 app.listen(2007,()=>{
     console.log("Server listening on port 2007")
 })
-
-

@@ -4,7 +4,8 @@ export default function BookingModal({
   isOpen,
   seat,
   onClose,
-  onConfirm
+  onConfirm,
+  isSubmitting = false
 }) {
   const [duration, setDuration] = useState(3);
 
@@ -327,6 +328,7 @@ export default function BookingModal({
           <button
             type="button"
             onClick={handleConfirm}
+            disabled={isSubmitting}
             style={{
               flex: 1,
               padding: '14px 20px',
@@ -348,7 +350,7 @@ export default function BookingModal({
             onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = '#8b484f')}
           >
             <span className="material-symbols-outlined" style={{ fontSize: '20px' }}>how_to_reg</span>
-            <span>Confirm Reservation for {seat.id}</span>
+            <span>            {isSubmitting ? 'Saving reservation...' : 'Confirm Reservation'} for {seat.id}</span>
           </button>
 
           <button

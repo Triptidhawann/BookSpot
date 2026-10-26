@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
+import axios from 'axios';
 import Sidebar from '../components/Sidebar';
 import Header from '../components/Header';
 import FloorPlanMap from '../components/FloorPlanMap';
@@ -6,6 +7,7 @@ import FloatingBookingBar from '../components/FloatingBookingBar';
 import BookingModal from '../components/BookingModal';
 import Toast from '../components/Toast';
 import { initialSeats, campusStatus } from '../data/mockData';
+
 
 export default function FloorPlanView({ onNavigate, onBookingConfirmed, initialSelectedSeat }) {
   const [seats, setSeats] = useState(initialSeats);
@@ -22,8 +24,10 @@ export default function FloorPlanView({ onNavigate, onBookingConfirmed, initialS
     subtitle: ''
   });
   const [searchQuery, setSearchQuery] = useState('');
+  const [isBooking, setIsBooking] = useState(false);
 
   const handleSelectSeat = (seat, isBookedByOther, isMyBooking) => {
+    console.log(seat.id);
     if (isMyBooking) {
       setSelectedSeat(seat);
       setToastData({
@@ -75,28 +79,58 @@ export default function FloorPlanView({ onNavigate, onBookingConfirmed, initialS
     }
   };
 
-  const handleConfirmReservation = (bookingDetails) => {
-    setIsModalOpen(false);
-    // Add to current user's booked seats -> turns GREEN!
-    setMyBookedSeatIds((prev) => [...prev, bookingDetails.seatId]);
+  const handleConfirmReservation = async (bookingDetails) => {
+    const savedUser = localStorage.getItem('bookspot_user');
+    const user = savedUser ? JSON.parse(savedUser) : null;
 
-    setSeats((prev) =>
-      prev.map((s) => (s.id === bookingDetails.seatId ? { ...s, status: 'available' } : s))
-    );
-
-    setToastData({
-      show: true,
-      title: `Seat ${bookingDetails.seatId} Reserved (Turned Green!)`,
-      subtitle: `Booked for ${bookingDetails.duration} hours at ${bookingDetails.zone}. Check-in confirmed.`
-    });
-
-    if (onBookingConfirmed) {
-      onBookingConfirmed(bookingDetails);
+    if (!user?.roll_no || !user?.name) {
+      setToastData({
+        show: true,
+        title: 'Sign in required',
+        subtitle: 'Please sign in before reserving a seat.'
+      });
+      return;
     }
 
-    setTimeout(() => {
-      setToastData((prev) => ({ ...prev, show: false }));
-    }, 5000);
+    setIsBooking(true);
+    try {
+      const response = await axios.post('/api/bookSeat', {
+        seatId: bookingDetails.seatId,
+        zone: bookingDetails.zone,
+        roll: user.roll_no,
+        name: user.name,
+        duration: bookingDetails.duration,
+        status: 'CONFIRMED'
+      });
+
+      if (!response.data.status) {
+        throw new Error(response.data.msg || 'Unable to reserve seat');
+      }
+
+      setIsModalOpen(false);
+      setMyBookedSeatIds((prev) => [...new Set([...prev, bookingDetails.seatId])]);
+      setSeats((prev) =>
+        prev.map((s) => (s.id === bookingDetails.seatId ? { ...s, status: 'occupied' } : s))
+      );
+      setToastData({
+        show: true,
+        title: `Seat ${bookingDetails.seatId} Reserved`,
+        subtitle: `Booked for ${bookingDetails.duration} hours in Zone ${bookingDetails.zone}.`
+      });
+
+      onBookingConfirmed?.(bookingDetails);
+      setTimeout(() => {
+        setToastData((prev) => ({ ...prev, show: false }));
+      }, 5000);
+    } catch (error) {
+      setToastData({
+        show: true,
+        title: 'Booking failed',
+        subtitle: error.response?.data?.msg || error.message || 'Unable to reserve this seat.'
+      });
+    } finally {
+      setIsBooking(false);
+    }
   };
 
   const handleSearch = (query) => {
@@ -259,6 +293,7 @@ export default function FloorPlanView({ onNavigate, onBookingConfirmed, initialS
         seat={selectedSeat}
         onClose={() => setIsModalOpen(false)}
         onConfirm={handleConfirmReservation}
+        isSubmitting={isBooking}
       />
 
       {/* Toast Notification */}
