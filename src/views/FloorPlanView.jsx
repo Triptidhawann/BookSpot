@@ -6,15 +6,13 @@ import FloorPlanMap from '../components/FloorPlanMap';
 import FloatingBookingBar from '../components/FloatingBookingBar';
 import BookingModal from '../components/BookingModal';
 import Toast from '../components/Toast';
-import { initialSeats, campusStatus } from '../data/mockData';
+import { campusStatus } from '../data/mockData';
 
 
 export default function FloorPlanView({ onNavigate, onBookingConfirmed, initialSelectedSeat }) {
-  const [seats, setSeats] = useState(initialSeats);
-  const [myBookedSeatIds, setMyBookedSeatIds] = useState(['C04']);
-  const [selectedSeat, setSelectedSeat] = useState(
-    initialSelectedSeat || initialSeats.find((s) => s.id === 'C04') || null
-  );
+  const [seats, setSeats] = useState([]);
+  const [myBookedSeatIds, setMyBookedSeatIds] = useState([]);
+  const [selectedSeat, setSelectedSeat] = useState(initialSelectedSeat || null);
   const [activeFilter, setActiveFilter] = useState('all');
   const [isModalOpen, setIsModalOpen] = useState(!!initialSelectedSeat);
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
@@ -26,13 +24,26 @@ export default function FloorPlanView({ onNavigate, onBookingConfirmed, initialS
   const [searchQuery, setSearchQuery] = useState('');
   const [isBooking, setIsBooking] = useState(false);
 
+  useEffect(() => {
+    const loadSeats = async () => {
+      try {
+          const response = await axios.get('/api/getSeatsData');
+          setSeats(response.data);
+      } catch (error) {
+          console.error('Failed to load seats:', error);
+      }
+    };
+
+    loadSeats();
+  },[])
+
   const handleSelectSeat = (seat, isBookedByOther, isMyBooking) => {
-    console.log(seat.id);
+    console.log(seat.seatNo);
     if (isMyBooking) {
       setSelectedSeat(seat);
       setToastData({
         show: true,
-        title: `Your Active Reservation: ${seat.id} (Green)`,
+        title: `Your Active Reservation: ${seat.seatNo} (Green)`,
         subtitle: `This seat is reserved by you. Check-in is active and confirmed.`
       });
       setTimeout(() => setToastData((prev) => ({ ...prev, show: false })), 4000);
@@ -43,38 +54,24 @@ export default function FloorPlanView({ onNavigate, onBookingConfirmed, initialS
       setSelectedSeat(seat);
       setToastData({
         show: true,
-        title: `Seat ${seat.id} is Booked (Grey)`,
+        title: `Seat ${seat.seatNo} is Booked (Grey)`,
         subtitle: `Occupied by another student. Turned darker grey on click. Please select an available white seat.`
       });
       setTimeout(() => setToastData((prev) => ({ ...prev, show: false })), 4000);
       return;
     }
 
-    // Available seat: highlight and OPEN POPUP IMMEDIATELY
-    setSeats((prev) =>
-      prev.map((s) => {
-        if (s.id === seat.id) {
-          return { ...s, status: 'selected' };
-        }
-        if (s.status === 'selected') {
-          return { ...s, status: 'available' };
-        }
-        return s;
-      })
-    );
+   // Available seat: highlight and OPEN POPUP IMMEDIATELY
     setSelectedSeat(seat);
     setIsModalOpen(true);
   };
 
   const handleClearSelection = () => {
-    setSeats((prev) =>
-      prev.map((s) => (s.status === 'selected' ? { ...s, status: 'available' } : s))
-    );
     setSelectedSeat(null);
   };
 
   const handleOpenModal = () => {
-    if (selectedSeat && !myBookedSeatIds.includes(selectedSeat.id)) {
+    if (selectedSeat && !myBookedSeatIds.includes(selectedSeat.seatNo)) {
       setIsModalOpen(true);
     }
   };
@@ -95,7 +92,7 @@ export default function FloorPlanView({ onNavigate, onBookingConfirmed, initialS
     setIsBooking(true);
     try {
       const response = await axios.post('/api/bookSeat', {
-        seatId: bookingDetails.seatId,
+        seatNo: bookingDetails.seatNo,
         zone: bookingDetails.zone,
         roll: user.roll_no,
         name: user.name,
@@ -108,13 +105,13 @@ export default function FloorPlanView({ onNavigate, onBookingConfirmed, initialS
       }
 
       setIsModalOpen(false);
-      setMyBookedSeatIds((prev) => [...new Set([...prev, bookingDetails.seatId])]);
+      setMyBookedSeatIds((prev) => [...new Set([...prev, bookingDetails.seatNo])]);
       setSeats((prev) =>
-        prev.map((s) => (s.id === bookingDetails.seatId ? { ...s, status: 'occupied' } : s))
+        prev.map((s) => (s.seatNo === bookingDetails.seatNo ? { ...s, isBooked: 'booked' } : s))
       );
       setToastData({
         show: true,
-        title: `Seat ${bookingDetails.seatId} Reserved`,
+        title: `Seat ${bookingDetails.seatNo} Reserved`,
         subtitle: `Booked for ${bookingDetails.duration} hours in Zone ${bookingDetails.zone}.`
       });
 
@@ -136,8 +133,8 @@ export default function FloorPlanView({ onNavigate, onBookingConfirmed, initialS
   const handleSearch = (query) => {
     setSearchQuery(query);
     if (!query) return;
-    const match = seats.find((s) => s.id.toLowerCase() === query.trim().toLowerCase());
-    if (match && match.status === 'available') {
+    const match = seats.find((s) => s.seatNo.toLowerCase() === query.trim().toLowerCase());
+    if (match && match.isBooked === 'available') {
       handleSelectSeat(match);
     }
   };

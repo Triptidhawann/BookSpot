@@ -27,7 +27,7 @@ export default function BookingModal({
 
   const handleConfirm = () => {
     onConfirm({
-      seatId: seat.id,
+      seatNo: seat.seatNo,
       zone: seat.zone,
       duration,
       startTime: "10:30 AM",
@@ -99,7 +99,7 @@ export default function BookingModal({
                     lineHeight: 1.2
                   }}
                 >
-                  Seat {seat.id}
+                  Seat {seat.seatNo}
                 </h3>
                 <span
                   style={{
@@ -350,7 +350,7 @@ export default function BookingModal({
             onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = '#8b484f')}
           >
             <span className="material-symbols-outlined" style={{ fontSize: '20px' }}>how_to_reg</span>
-            <span>            {isSubmitting ? 'Saving reservation...' : 'Confirm Reservation'} for {seat.id}</span>
+            <span>{isSubmitting ? 'Saving reservation...' : 'Confirm Reservation'} for {seat.seatNo}</span>
           </button>
 
           <button

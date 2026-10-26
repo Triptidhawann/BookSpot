@@ -82,13 +82,13 @@ app.get("/login", handleLogin);
 app.post("/login", handleLogin);
 
 app.post("/bookSeat", async (req, res) => {
-    const seatNo = req.body?.seatId;
+    const seatNo = req.body?.seatNo;
     const zone =req.body?.zone;
     const rollNo = req.body?.roll;
     const name =req.body?.name;
     const duration = req.body?.duration;
     const bookingStatus = "CONFIRMED";
-    const seatStatus = "occupied";
+    const seatStatus = "booked";
 
     if (!seatNo || !zone || !rollNo || !name || !Number.isFinite(duration) || duration <= 0) {
         return res.status(400).json({
@@ -133,6 +133,16 @@ app.post("/bookSeat", async (req, res) => {
         return res.status(500).json({ status: false, msg: "Unable to reserve seat" });
     }
 });
+
+app.get("/getSeatsData",(req,res)=>{
+    mysql.query("SELECT * FROM seats", (err, result) => {
+        if (err) {
+            return res.status(500).json({ error: err.message });
+        }
+        console.log(result);
+        res.json(result);
+    });
+})
 
 app.listen(2007,()=>{
     console.log("Server listening on port 2007")

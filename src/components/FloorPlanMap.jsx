@@ -4,7 +4,7 @@ import SeatNode from './SeatNode';
 export default function FloorPlanMap({
   seats,
   selectedSeat,
-  myBookedSeatIds = ['C04'],
+  myBookedSeatIds = [],
   onSelectSeat,
   activeFilter = 'all',
   onFilterChange
@@ -30,11 +30,11 @@ export default function FloorPlanMap({
     return 0.35;
   };
 
-  const podASeats = seats.filter((s) => s.id.startsWith('A'));
-  const blockBSeats = seats.filter((s) => s.id.startsWith('B'));
-  const blockCSeats = seats.filter((s) => s.id.startsWith('C'));
-  const podESeats = seats.filter((s) => s.id.startsWith('E'));
-  const podFSeats = seats.filter((s) => s.id.startsWith('F'));
+  const podASeats = seats.filter((s) => s.seatNo.startsWith('A'));
+  const blockBSeats = seats.filter((s) => s.seatNo.startsWith('B'));
+  const blockCSeats = seats.filter((s) => s.seatNo.startsWith('C'));
+  const podESeats = seats.filter((s) => s.seatNo.startsWith('E'));
+  const podFSeats = seats.filter((s) => s.seatNo.startsWith('F'));
 
   return (
     <div
@@ -501,10 +501,10 @@ export default function FloorPlanMap({
             <div style={{ display: 'flex', justifyContent: 'space-between', gap: '6px', position: 'relative', zIndex: 2 }}>
               {podASeats.slice(0, 5).map((s) => (
                 <SeatNode
-                  key={s.id}
+                  key={s.seatNo}
                   seat={s}
-                  isSelected={selectedSeat?.id === s.id}
-                  isMyBooking={myBookedSeatIds.includes(s.id)}
+                  isSelected={selectedSeat?.seatNo === s.seatNo}
+                  isMyBooking={myBookedSeatIds.includes(s.seatNo)}
                   onSelect={onSelectSeat}
                   size="md"
                 />
@@ -518,10 +518,10 @@ export default function FloorPlanMap({
               <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'space-between', height: '100%', gap: '8px' }}>
                 {podASeats.slice(5, 8).map((s) => (
                   <SeatNode
-                    key={s.id}
+                    key={s.seatNo}
                     seat={s}
-                    isSelected={selectedSeat?.id === s.id}
-                    isMyBooking={myBookedSeatIds.includes(s.id)}
+                    isSelected={selectedSeat?.seatNo === s.seatNo}
+                    isMyBooking={myBookedSeatIds.includes(s.seatNo)}
                     onSelect={onSelectSeat}
                     size="md"
                   />
@@ -579,10 +579,10 @@ export default function FloorPlanMap({
               <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'space-between', height: '100%', gap: '8px' }}>
                 {podASeats.slice(8, 11).map((s) => (
                   <SeatNode
-                    key={s.id}
+                    key={s.seatNo}
                     seat={s}
-                    isSelected={selectedSeat?.id === s.id}
-                    isMyBooking={myBookedSeatIds.includes(s.id)}
+                    isSelected={selectedSeat?.seatNo === s.seatNo}
+                    isMyBooking={myBookedSeatIds.includes(s.seatNo)}
                     onSelect={onSelectSeat}
                     size="md"
                   />
@@ -594,10 +594,10 @@ export default function FloorPlanMap({
             <div style={{ display: 'flex', justifyContent: 'space-between', gap: '6px', position: 'relative', zIndex: 2 }}>
               {podASeats.slice(11, 16).map((s) => (
                 <SeatNode
-                  key={s.id}
+                  key={s.seatNo}
                   seat={s}
-                  isSelected={selectedSeat?.id === s.id}
-                  isMyBooking={myBookedSeatIds.includes(s.id)}
+                  isSelected={selectedSeat?.seatNo === s.seatNo}
+                  isMyBooking={myBookedSeatIds.includes(s.seatNo)}
                   onSelect={onSelectSeat}
                   size="md"
                 />
@@ -630,10 +630,10 @@ export default function FloorPlanMap({
             <div style={{ display: 'flex', justifyContent: 'space-between', gap: '6px', position: 'relative', zIndex: 2 }}>
               {blockBSeats.slice(0, 16).map((s) => (
                 <SeatNode
-                  key={s.id}
+                  key={s.seatNo}
                   seat={s}
-                  isSelected={selectedSeat?.id === s.id}
-                  isMyBooking={myBookedSeatIds.includes(s.id)}
+                  isSelected={selectedSeat?.seatNo === s.seatNo}
+                  isMyBooking={myBookedSeatIds.includes(s.seatNo)}
                   onSelect={onSelectSeat}
                   size="sm"
                 />
@@ -663,10 +663,10 @@ export default function FloorPlanMap({
             <div style={{ display: 'flex', justifyContent: 'space-between', gap: '6px', position: 'relative', zIndex: 2 }}>
               {blockBSeats.slice(16, 32).map((s) => (
                 <SeatNode
-                  key={s.id}
+                  key={s.seatNo}
                   seat={s}
-                  isSelected={selectedSeat?.id === s.id}
-                  isMyBooking={myBookedSeatIds.includes(s.id)}
+                  isSelected={selectedSeat?.seatNo === s.seatNo}
+                  isMyBooking={myBookedSeatIds.includes(s.seatNo)}
                   onSelect={onSelectSeat}
                   size="sm"
                 />
@@ -699,10 +699,10 @@ export default function FloorPlanMap({
             <div style={{ display: 'flex', justifyContent: 'space-between', gap: '8px', position: 'relative', zIndex: 2 }}>
               {blockCSeats.slice(0, 7).map((s) => (
                 <SeatNode
-                  key={s.id}
+                  key={s.seatNo}
                   seat={s}
-                  isSelected={selectedSeat?.id === s.id}
-                  isMyBooking={myBookedSeatIds.includes(s.id)}
+                  isSelected={selectedSeat?.seatNo === s.seatNo}
+                  isMyBooking={myBookedSeatIds.includes(s.seatNo)}
                   onSelect={onSelectSeat}
                   size="md"
                 />
@@ -730,10 +730,10 @@ export default function FloorPlanMap({
             <div style={{ display: 'flex', justifyContent: 'space-between', gap: '8px', position: 'relative', zIndex: 2 }}>
               {blockCSeats.slice(7, 14).map((s) => (
                 <SeatNode
-                  key={s.id}
+                  key={s.seatNo}
                   seat={s}
-                  isSelected={selectedSeat?.id === s.id}
-                  isMyBooking={myBookedSeatIds.includes(s.id)}
+                  isSelected={selectedSeat?.seatNo === s.seatNo}
+                  isMyBooking={myBookedSeatIds.includes(s.seatNo)}
                   onSelect={onSelectSeat}
                   size="md"
                 />
@@ -769,10 +769,10 @@ export default function FloorPlanMap({
             <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'space-between', gap: '6px', position: 'relative', zIndex: 2 }}>
               {podESeats.slice(0, 6).map((s) => (
                 <SeatNode
-                  key={s.id}
+                  key={s.seatNo}
                   seat={s}
-                  isSelected={selectedSeat?.id === s.id}
-                  isMyBooking={myBookedSeatIds.includes(s.id)}
+                  isSelected={selectedSeat?.seatNo === s.seatNo}
+                  isMyBooking={myBookedSeatIds.includes(s.seatNo)}
                   onSelect={onSelectSeat}
                   size="md"
                 />
@@ -807,10 +807,10 @@ export default function FloorPlanMap({
             <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'space-between', gap: '6px', position: 'relative', zIndex: 2 }}>
               {podESeats.slice(6, 12).map((s) => (
                 <SeatNode
-                  key={s.id}
+                  key={s.seatNo}
                   seat={s}
-                  isSelected={selectedSeat?.id === s.id}
-                  isMyBooking={myBookedSeatIds.includes(s.id)}
+                  isSelected={selectedSeat?.seatNo === s.seatNo}
+                  isMyBooking={myBookedSeatIds.includes(s.seatNo)}
                   onSelect={onSelectSeat}
                   size="md"
                 />
@@ -842,10 +842,10 @@ export default function FloorPlanMap({
             <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'space-between', gap: '6px', position: 'relative', zIndex: 2 }}>
               {podFSeats.slice(0, 6).map((s) => (
                 <SeatNode
-                  key={s.id}
+                  key={s.seatNo}
                   seat={s}
-                  isSelected={selectedSeat?.id === s.id}
-                  isMyBooking={myBookedSeatIds.includes(s.id)}
+                  isSelected={selectedSeat?.seatNo === s.seatNo}
+                  isMyBooking={myBookedSeatIds.includes(s.seatNo)}
                   onSelect={onSelectSeat}
                   size="md"
                 />
@@ -880,10 +880,10 @@ export default function FloorPlanMap({
             <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'space-between', gap: '6px', position: 'relative', zIndex: 2 }}>
               {podFSeats.slice(6, 12).map((s) => (
                 <SeatNode
-                  key={s.id}
+                  key={s.seatNo}
                   seat={s}
-                  isSelected={selectedSeat?.id === s.id}
-                  isMyBooking={myBookedSeatIds.includes(s.id)}
+                  isSelected={selectedSeat?.seatNo === s.seatNo}
+                  isMyBooking={myBookedSeatIds.includes(s.seatNo)}
                   onSelect={onSelectSeat}
                   size="md"
                 />

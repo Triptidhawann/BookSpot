@@ -11,8 +11,8 @@ export default function SeatNode({
   const [isHovered, setIsHovered] = useState(false);
   const [isPressed, setIsPressed] = useState(false);
 
-  const isBookedByOther = seat.status === 'occupied' || seat.status === 'maintenance' || seat.status === 'held';
-  const isAvailable = seat.status === 'available' || seat.status === 'selected';
+  const isBookedByOther = seat.isBooked === 'booked';
+  const isAvailable = seat.isBooked === 'available';
 
   const handleClick = (e) => {
     e.stopPropagation();
@@ -89,14 +89,14 @@ export default function SeatNode({
   }
 
   const tooltipText = isMyBooking
-    ? `Seat ${seat.id} (Booked by You • Green)`
+    ? `Seat ${seat.seatNo} (Booked by You • Green)`
     : isSelected && isBookedByOther
-    ? `Seat ${seat.id} (Booked by Another Student • Darker Grey)`
+    ? `Seat ${seat.seatNo} (Booked by Another Student • Darker Grey)`
     : isBookedByOther
-    ? `Seat ${seat.id} (Booked • Grey)`
+    ? `Seat ${seat.seatNo} (Booked • Grey)`
     : isSelected
-    ? `Seat ${seat.id} (Selected for Booking)`
-    : `Seat ${seat.id} (Available — Click to Reserve)`;
+    ? `Seat ${seat.seatNo} (Selected for Booking)`
+    : `Seat ${seat.seatNo} (Available — Click to Reserve)`;
 
   return (
     <button
@@ -150,10 +150,10 @@ export default function SeatNode({
       {isMyBooking ? (
         <span style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '1px' }}>
           <span className="material-symbols-outlined" style={{ fontSize: '13px', fontWeight: 800 }}>check</span>
-          <span>{seat.id.replace(/^[A-Z]/, '')}</span>
+          <span>{seat.seatNo.replace(/^[A-Z]/, '')}</span>
         </span>
       ) : (
-        showLabel ? seat.id.replace(/^[A-Z]/, '') : ''
+        showLabel ? seat.seatNo.replace(/^[A-Z]/, '') : ''
       )}
     </button>
   );
