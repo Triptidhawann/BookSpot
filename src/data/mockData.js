@@ -22,16 +22,15 @@ export const campusStatus = {
 };
 
 export const activeBooking = {
-  id: "BK-88219",
-  seatId: "C04",
-  zoneName: "C",
-  zoneLocation: "Level 2 • North Wing • Collab Table",
-  status: "Checked-in",
-  startTime: "10:30 AM",
-  endTime: "1:30 PM",
-  durationHours: 3,
-  timeLeft: "1h 45m left",
-  notes: "Reserved for group project prep and analytical review. Direct access to high-lumen skylights."
+      "booking_id": "",
+      "seatNo": "",
+      "student_id": "",
+      "name": "",
+      "start_time": "",
+      "end_time": "",
+      "status": "",
+      "created_at": "",
+      "cancelled_at": null
 };
 
 export const upcomingBookings = [

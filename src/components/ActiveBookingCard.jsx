@@ -72,7 +72,7 @@ export default function ActiveBookingCard({
         {/* Title */}
         <div style={{ display: 'flex', alignItems: 'baseline', gap: '8px', flexWrap: 'wrap' }}>
           <h2 className="headline-xl" style={{ color: 'var(--on-surface)', fontWeight: 700 }}>
-            Seat {booking.seatId}
+            Seat {booking.seatNo}
           </h2>
           <span className="headline-md" style={{ color: 'var(--primary)', fontWeight: 600 }}>
             — Central Collaboration Table

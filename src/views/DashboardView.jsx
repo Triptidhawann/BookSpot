@@ -3,6 +3,7 @@ import Sidebar from '../components/Sidebar';
 import Header from '../components/Header';
 import ActiveBookingCard from '../components/ActiveBookingCard';
 import Toast from '../components/Toast';
+import axios from 'axios'
 import {
   currentUser,
   campusStatus,
@@ -24,19 +25,26 @@ export default function DashboardView({ onNavigate, user }) {
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
   const [toastData, setToastData] = useState({ show: false, title: '', subtitle: '' });
 
-  useEffect(()=>{
-    const getBookedSeat= async()=>{
-      try{
-        const resp = axios.get("http://localhost:2007/getBookedSeat",{params:rollNo})
-        console.log(resp);
-        setActiveBooking(resp);
-      }
-      catch(err){
-        console.log(err);
+  useEffect(() => {
+    const getBookedSeat = async () => {
+      if (!user?.roll_no) {
+        return;
       }
 
-    }
-  },[])
+      try {
+        const response = await axios.get('http://localhost:2007/getBookedSeat', {
+          params: { roll_no: user.roll_no }
+        });
+        console.log('Booked seat response:', response.data);
+        setActiveBooking(response.data.bookings?.[0] || null);
+
+      } catch (error) {
+        console.error('Failed to load booked seat:', error.response?.data || error.message);
+      }
+    };
+
+    getBookedSeat();
+  }, [user?.roll_no]);
   const showToast = (title, subtitle) => {
     setToastData({ show: true, title, subtitle });
     setTimeout(() => {
@@ -310,7 +318,7 @@ export default function DashboardView({ onNavigate, user }) {
 
                 <div style={{ margin: '10px 0' }}>
                   <div className="headline-xl" style={{ fontSize: '35px', lineHeight: 1.05, fontWeight: 700, color: 'var(--primary)' }}>
-                    {activeBooking ? `Seat ${activeBooking.seatId}` : 'No Active Booking'}
+                    {activeBooking ? `Seat ${activeBooking.seatNo}` : 'No Active Booking'}
                   </div>
                   {activeBooking && (
                     <div style={{ marginTop: '8px' }}>

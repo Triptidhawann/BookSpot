@@ -178,12 +178,12 @@ app.get("/getSeatsData",(req,res)=>{
 })
 
 app.get("/getBookedSeat",(req,res)=>{
-    let {rollNo} = req.query;
+    let {roll_no} = req.query;
 
 try {
     mysql.query(
         "SELECT * FROM bookings WHERE student_id = ?",
-        [rollNo],
+        [roll_no],
         (err, result) => {
             if (err) {
                 console.log(err);
