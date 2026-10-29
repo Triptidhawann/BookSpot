@@ -125,7 +125,28 @@ export default function SignInView({ onNavigate, onAuthenticated }) {
             </span>
           </div>
 
-          {/* Back link */}
+          {/* Links cluster */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+            <button
+              type="button"
+              onClick={() => onNavigate('admin-login')}
+              style={{
+                border: '1px solid rgba(139, 72, 79, 0.3)',
+                background: 'rgba(139, 72, 79, 0.08)',
+                color: 'var(--primary)',
+                padding: '6px 12px',
+                borderRadius: '8px',
+                fontSize: '13px',
+                fontWeight: 600,
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '6px'
+              }}
+            >
+              <span className="material-symbols-outlined" style={{ fontSize: '18px' }}>admin_panel_settings</span>
+              <span>Admin Portal</span>
+            </button>
           <button
             type="button"
             onClick={() => onNavigate('landing')}
@@ -149,6 +170,7 @@ export default function SignInView({ onNavigate, onAuthenticated }) {
             </span>
             <span>Back to Library Home</span>
           </button>
+        </div>
         </div>
       </header>
 

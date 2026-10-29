@@ -4,6 +4,8 @@ import FloorPlanView from './views/FloorPlanView';
 import DashboardView from './views/DashboardView';
 import SignInView from './views/SignInView';
 import SignUpView from './views/SignUpView';
+import AdminLoginView from './views/admin/AdminLoginView';
+import AdminDashboardView from './views/admin/AdminDashboardView';
 import './App.css';
 
 export default function App() {
@@ -13,6 +15,15 @@ export default function App() {
     try {
       const savedUser = localStorage.getItem('bookspot_user');
       return savedUser ? JSON.parse(savedUser) : null;
+    } catch {
+      return null;
+    }
+  });
+
+  const [adminUser, setAdminUser] = useState(() => {
+    try {
+      const savedAdmin = localStorage.getItem('bookspot_admin_session');
+      return savedAdmin ? JSON.parse(savedAdmin) : null;
     } catch {
       return null;
     }
@@ -61,6 +72,28 @@ export default function App() {
         activeView === 'booking-history' ||
         activeView === 'profile') && (
         <DashboardView onNavigate={handleNavigate} user={loggedInUser} />
+      )}
+
+      {/* Admin Portal Views */}
+      {activeView === 'admin-login' && (
+        <AdminLoginView
+          onNavigate={handleNavigate}
+          onAdminAuthenticated={setAdminUser}
+        />
+      )}
+
+      {activeView === 'admin-dashboard' && (
+        adminUser ? (
+          <AdminDashboardView
+            onNavigate={handleNavigate}
+            adminUser={adminUser}
+          />
+        ) : (
+          <AdminLoginView
+            onNavigate={handleNavigate}
+            onAdminAuthenticated={setAdminUser}
+          />
+        )
       )}
     </div>
   );

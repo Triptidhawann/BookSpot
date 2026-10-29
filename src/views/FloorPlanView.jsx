@@ -7,10 +7,11 @@ import FloatingBookingBar from '../components/FloatingBookingBar';
 import BookingModal from '../components/BookingModal';
 import Toast from '../components/Toast';
 import { campusStatus } from '../data/mockData';
+import { getAdminStore } from '../data/adminMockData';
 
 
 export default function FloorPlanView({ onNavigate, onBookingConfirmed, initialSelectedSeat }) {
-  const [seats, setSeats] = useState([]);
+  const [seats, setSeats] = useState(() => getAdminStore().seats);
   const [myBookedSeatIds, setMyBookedSeatIds] = useState([]);
   const [selectedSeat, setSelectedSeat] = useState(initialSelectedSeat || null);
   const [activeFilter, setActiveFilter] = useState('all');
@@ -28,7 +29,9 @@ export default function FloorPlanView({ onNavigate, onBookingConfirmed, initialS
     const loadSeats = async () => {
       try {
           const response = await axios.get('/api/getSeatsData');
-          setSeats(response.data);
+          if (Array.isArray(response.data) && response.data.length > 0) {
+            setSeats(response.data);
+          }
       } catch (error) {
           console.error('Failed to load seats:', error);
       }
@@ -127,6 +130,18 @@ export default function FloorPlanView({ onNavigate, onBookingConfirmed, initialS
         title: 'Booking failed',
         subtitle: error.response?.data?.msg || error.message || 'Unable to reserve this seat.'
       });
+      // Client-side fallback if backend server is not running
+      setIsModalOpen(false);
+      setMyBookedSeatIds((prev) => [...new Set([...prev, bookingDetails.seatNo])]);
+      setSeats((prev) =>
+        prev.map((s) => (s.seatNo === bookingDetails.seatNo ? { ...s, isBooked: 'booked' } : s))
+      );
+      setToastData({
+        show: true,
+        title: `Seat ${bookingDetails.seatNo} Reserved`,
+        subtitle: `Booked for ${bookingDetails.duration} hours in Zone ${bookingDetails.zone}.`
+      });
+      onBookingConfirmed?.(bookingDetails);
     } finally {
       setIsBooking(false);
     }

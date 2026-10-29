@@ -197,6 +197,27 @@ export default function Navbar({ onNavigate }) {
           </div>
 
           {/* Right Action Cluster */}
+          <button
+            type="button"
+            onClick={() => onNavigate('admin-login')}
+            style={{
+              border: '1px solid rgba(139, 72, 79, 0.25)',
+              backgroundColor: 'rgba(139, 72, 79, 0.08)',
+              color: 'var(--primary)',
+              padding: '6px 12px',
+              borderRadius: '8px',
+              fontSize: '13px',
+              fontWeight: 600,
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '4px'
+            }}
+            title="Admin Portal"
+          >
+            <span className="material-symbols-outlined" style={{ fontSize: '16px' }}>admin_panel_settings</span>
+            <span>Admin</span>
+          </button>
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
             <button
               type="button"
