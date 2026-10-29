@@ -1,10 +1,95 @@
-import React, { useState, useMemo } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
+import axios from 'axios';
 import { getAdminStore, saveAdminStore, resetAdminStore } from '../../data/adminMockData';
+
+const normalizeSeats = (seats) => {
+  const uniqueSeats = new Map();
+
+  seats.forEach((seat) => {
+    const seatNo = (seat.seatNo || seat.seat_no || '').trim().toUpperCase();
+    if (!seatNo) return;
+
+    const normalizedSeat = {
+      ...seat,
+      seatNo,
+      zone: seat.zone || 'Unassigned',
+      isBooked: seat.isBooked || seat.is_booked || 'available',
+      bookedBy: seat.bookedBy || null
+    };
+    const existingSeat = uniqueSeats.get(seatNo);
+
+    if (
+      !existingSeat ||
+      (existingSeat.isBooked === 'available' && normalizedSeat.isBooked !== 'available')
+    ) {
+      uniqueSeats.set(seatNo, normalizedSeat);
+    }
+  });
+
+  return Array.from(uniqueSeats.values());
+};
 
 export default function AdminDashboardView({ onNavigate, adminUser }) {
   // Navigation tabs: 'overview' | 'students' | 'seats' | 'bookings' | 'reports'
   const [activeTab, setActiveTab] = useState('overview');
   const [store, setStore] = useState(() => getAdminStore());
+
+  useEffect(() => {
+    const loadStudents = async () => {
+      try {
+        const response = await axios.get('/api/getStudentsData');
+        if (!Array.isArray(response.data)) {
+          throw new Error('Students API returned an invalid response.');
+        }
+
+        const students = response.data.map((student) => ({
+          ...student,
+          id: student.id || student.student_id || student.roll_no,
+          rollNo: student.rollNo || student.roll_no,
+          email: student.email || '',
+          department: student.department || 'Not specified',
+          semester: student.semester || 'Not specified',
+          status: student.status || 'active',
+          joinedDate: student.joinedDate || student.joined_date || '',
+          totalBookings: student.totalBookings || student.total_bookings || 0,
+          avatar: student.avatar || ''
+        }));
+
+        setStore((previousStore) => {
+          const updatedStore = { ...previousStore, students };
+          saveAdminStore(updatedStore);
+          return updatedStore;
+        });
+      } catch (error) {
+        console.error('Failed to load students:', error);
+      }
+    };
+
+    loadStudents();
+  }, []);
+
+  useEffect(() => {
+    const loadSeats = async () => {
+      try {
+        const response = await axios.get('/api/getSeatsData');
+        if (!Array.isArray(response.data)) {
+          throw new Error('Seats API returned an invalid response.');
+        }
+
+        const seats = normalizeSeats(response.data);
+
+        setStore((previousStore) => {
+          const updatedStore = { ...previousStore, seats };
+          saveAdminStore(updatedStore);
+          return updatedStore;
+        });
+      } catch (error) {
+        console.error('Failed to load seats:', error);
+      }
+    };
+
+    loadSeats();
+  }, []);
 
 
   // Toast feedback
@@ -273,7 +358,7 @@ export default function AdminDashboardView({ onNavigate, adminUser }) {
   }, [store.students, studentSearch, studentStatusFilter]);
 
   const filteredSeats = useMemo(() => {
-    return store.seats.filter((s) => {
+    return normalizeSeats(store.seats).filter((s) => {
       const matchesSearch = s.seatNo.toLowerCase().includes(seatSearch.toLowerCase());
       const matchesZone = seatZoneFilter === 'all' || s.zone === seatZoneFilter;
       const matchesStatus = seatStatusFilter === 'all' || s.isBooked === seatStatusFilter;
