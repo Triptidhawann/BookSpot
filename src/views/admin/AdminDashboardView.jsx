@@ -29,6 +29,63 @@ const normalizeSeats = (seats) => {
   return Array.from(uniqueSeats.values());
 };
 
+const formatBookingTime = (value) => {
+  if (!value) return '';
+
+  const rawValue = String(value).trim();
+  const timeMatch = rawValue.match(/(?:T|\s|^)(\d{1,2}):(\d{2})(?::\d{2})?\s*(AM|PM)?/i);
+  if (!timeMatch) return rawValue;
+
+  let hours = Number(timeMatch[1]);
+  const minutes = Number(timeMatch[2]);
+  const meridiem = timeMatch[3]?.toUpperCase();
+
+  if (meridiem === 'PM' && hours < 12) hours += 12;
+  if (meridiem === 'AM' && hours === 12) hours = 0;
+
+  return new Date(1970, 0, 1, hours, minutes).toLocaleTimeString([], {
+    hour: 'numeric',
+    minute: '2-digit'
+  });
+};
+
+const normalizeBookings = (bookings, seats) => {
+  const seatsByNumber = new Map(
+    seats.map((seat) => [seat.seatNo, seat])
+  );
+
+  return bookings.map((booking) => {
+    const seatNo = booking.seatNo || booking.seat_no || '';
+    const rawStartTime = booking.startTime || booking.start_time || '';
+    const rawEndTime = booking.endTime || booking.end_time || '';
+    const startTime = formatBookingTime(rawStartTime);
+    const endTime = formatBookingTime(rawEndTime);
+    const start = new Date(`1970-01-01 ${startTime}`);
+    const end = new Date(`1970-01-01 ${endTime}`);
+    const durationHours =
+      booking.durationHours ||
+      booking.duration_hours ||
+      (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())
+        ? 0
+        : Math.max(0, (end.getTime() - start.getTime()) / 3600000));
+
+    return {
+      ...booking,
+      id: booking.id || booking.booking_id,
+      seatNo,
+      zone: booking.zone || seatsByNumber.get(seatNo)?.zone || 'Unassigned',
+      studentId: booking.studentId || booking.student_id,
+      studentName: booking.studentName || booking.name || 'Unknown student',
+      startTime,
+      endTime,
+      durationHours,
+      date: booking.date || booking.booking_date || booking.created_at?.split('T')[0] || '',
+      status: (booking.status || 'CONFIRMED').toUpperCase(),
+      notes: booking.notes || ''
+    };
+  });
+};
+
 export default function AdminDashboardView({ onNavigate, adminUser }) {
   // Navigation tabs: 'overview' | 'students' | 'seats' | 'bookings' | 'reports'
   const [activeTab, setActiveTab] = useState('overview');
@@ -89,6 +146,28 @@ export default function AdminDashboardView({ onNavigate, adminUser }) {
     };
 
     loadSeats();
+  }, []);
+
+  useEffect(() => {
+    const loadBookings = async () => {
+      try {
+        const response = await axios.get('/api/getBookingsData');
+        if (!Array.isArray(response.data)) {
+          throw new Error('Bookings API returned an invalid response.');
+        }
+
+        setStore((previousStore) => {
+          const bookings = normalizeBookings(response.data, normalizeSeats(previousStore.seats));
+          const updatedStore = { ...previousStore, bookings };
+          saveAdminStore(updatedStore);
+          return updatedStore;
+        });
+      } catch (error) {
+        console.error('Failed to load bookings:', error);
+      }
+    };
+
+    loadBookings();
   }, []);
 
 
@@ -1271,12 +1350,7 @@ export default function AdminDashboardView({ onNavigate, adminUser }) {
                             onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
                           >
                             <td style={{ padding: '14px 20px' }}>
-                              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                                <img
-                                  src={student.avatar}
-                                  alt={student.name}
-                                  style={{ width: '38px', height: '38px', borderRadius: '50%', objectFit: 'cover' }}
-                                />
+                              <div>
                                 <div>
                                   <div style={{ fontWeight: 600, color: '#1e1a1d', fontSize: '14px' }}>
                                     {student.name}

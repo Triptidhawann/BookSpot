@@ -187,6 +187,16 @@ app.get("/getStudentsData",(req,res)=>{
     });
 })
 
+app.get("/getBookingsData",(req,res)=>{
+    mysql.query("SELECT * FROM bookings", (err, result) => {
+        if (err) {
+            return res.status(500).json({ error: err.message });
+        }
+        console.log(result);
+        res.json(result);
+    });
+})
+
 app.get("/getBookedSeat",(req,res)=>{
     let {roll_no} = req.query;
 
