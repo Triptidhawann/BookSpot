@@ -8,34 +8,44 @@ import generateBookingQR from "./generateBookingQR.js";
 
 dotenv.config({ path: new URL("./.env", import.meta.url) });
 const app = express();
-const config = process.env.DB_URL;
-let mysql;
+const config = process.env.DB_URL || process.env.MYSQL_URL;
+if (!config) {
+    throw new Error("DB_URL is required. Configure it with the Aiven MySQL connection URL.");
+}
 
-if (config?.startsWith("mysql://")) {
-    const databaseUrl = new URL(config);
-    mysql = mysql2.createConnection({
+let dbConfig;
+if (config.startsWith("mysql://") || config.startsWith("mysql2://")) {
+    const databaseUrl = new URL(config.replace(/^mysql2:/, "mysql:"));
+    const usesTls = databaseUrl.searchParams.has("ssl-mode") ||
+        databaseUrl.searchParams.has("sslmode") ||
+        databaseUrl.hostname.endsWith("aivencloud.com");
+    dbConfig = {
         host: databaseUrl.hostname,
         port: Number(databaseUrl.port || 3306),
         user: decodeURIComponent(databaseUrl.username),
         password: decodeURIComponent(databaseUrl.password),
         database: decodeURIComponent(databaseUrl.pathname.replace(/^\//, "")),
-        ssl: databaseUrl.searchParams.get("ssl-mode")
-            ? { rejectUnauthorized: false }
-            : undefined
-    });
+        ssl: usesTls ? { rejectUnauthorized: false } : undefined
+    };
 } else {
-    mysql = mysql2.createConnection(config);
+    dbConfig = config;
 }
+const mysql = mysql2.createConnection(dbConfig);
+
+const allowedOrigins = (process.env.FRONTEND_URL || "http://localhost:5173")
+    .split(",").map((origin) => origin.trim()).filter(Boolean);
 
 app.use(express.json());
-app.use(cors());
+app.use(cors({ origin: allowedOrigins }));
 
-mysql.connect((err) => {
-    if (err) {
-        console.error("Database connection failed:", err.message);
-        return;
+app.get("/health", async (_req, res) => {
+    try {
+        await mysql.promise().query("SELECT 1");
+        return res.json({ status: true, database: "connected" });
+    } catch (err) {
+        console.error("Health check database query failed:", err.message);
+        return res.status(503).json({ status: false, database: "unavailable" });
     }
-    console.log("Connected to database successfully");
 });
 
 app.post("/register", async (req, res) => {
@@ -43,7 +53,7 @@ app.post("/register", async (req, res) => {
     const name = req.body.name;
     const password =req.body.password;
 
-    if (!rollNo || !name || password.length < 8) {
+    if (!rollNo || !name || typeof password !== "string" || password.length < 8) {
         return res.status(400).json({
             status: false,
             msg: "Name, roll number, and a password of at least 8 characters are required"
@@ -52,12 +62,12 @@ app.post("/register", async (req, res) => {
 
     try {
         const hash = await bcrypt.hash(password, 10);
-        mysql.query(
+        await mysql.promise().query(
             "INSERT INTO students (roll_no, name, password) VALUES (?, ?, ?)",
-            [rollNo, name, hash]),
-           
-                res.status(201).json({ status: true, msg: "User registered successfully" })
-        }       
+            [rollNo, name, hash]
+        );
+        return res.status(201).json({ status: true, msg: "User registered successfully" });
+    }
     catch (err) {
         console.error("Registration failed:", err.message);
         return res.status(500).json({ status: false, msg: "Unable to create account" });
@@ -124,6 +134,7 @@ app.post("/bookSeat", async (req, res) => {
         }
     } catch (err) {
         console.error("Existing booking check failed:", err.message);
+        return res.status(500).json({ status: false, msg: "Unable to verify existing bookings" });
     }
 
     if (!seatNo || !zone || !rollNo || !name || !Number.isFinite(duration) || duration <= 0 || !requestedStartTime || !requestedEndTime) {
@@ -162,15 +173,15 @@ app.post("/bookSeat", async (req, res) => {
         );
 
         const [seatResult] = await db.query(
-            "UPDATE seats SET isBooked = ? WHERE seatNo = ? AND zone = ?",
+            "UPDATE seats SET isBooked = ? WHERE seatNo = ? AND zone = ? AND isBooked = 'available'",
             [seatStatus, seatNo, zone]
         );
 
         if (seatResult.affectedRows === 0) {
             await db.rollback();
-            return res.status(404).json({
+            return res.status(409).json({
                 status: false,
-                msg: `Seat ${seatNo} was not found in zone ${zone}`
+                msg: `Seat ${seatNo} is no longer available in zone ${zone}`
             });
         }
 
@@ -180,7 +191,6 @@ app.post("/bookSeat", async (req, res) => {
             msg: "Seat reserved successfully",
             bookingId: bookingResult.insertId,
             qrToken: qr.token,
-            tokenHash: qr.tokenHash,
             qrCode: qr.qrCode,
             booking: {
                 bookingId: bookingResult.insertId,
@@ -304,7 +314,10 @@ app.post("/check-in", async (req, res) => {
         }
 
         const [result] = await db.query(
-            "UPDATE bookings SET check_in_time = NOW(), status = ? WHERE booking_id = ? AND check_in_time IS NULL",
+            `UPDATE bookings
+             SET check_in_time = NOW(), status = ?
+             WHERE booking_id = ? AND status = 'CONFIRMED' AND check_in_time IS NULL
+               AND start_time <= NOW() AND token_expires_at > NOW()`,
             ["CHECKED_IN", booking.booking_id]
         );
 
@@ -452,6 +465,15 @@ app.post("/cancelBooking", async (req, res) => {
 });
 
 const port = process.env.PORT || 2007;
-app.listen(port,()=>{
-    console.log(`Server listening on port ${port}`)
-})
+const server = app.listen(port, async () => {
+    try {
+        await mysql.promise().query("SELECT 1");
+        console.log(`Server listening on port ${port}; database connected`);
+    } catch (err) {
+        console.error("Initial database connection failed:", err.message);
+    }
+});
+
+process.on("SIGTERM", () => {
+    server.close(() => mysql.end(() => process.exit(0)));
+});

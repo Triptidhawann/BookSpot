@@ -1,29 +1,23 @@
-📚 BookSpot — Smart Library Seat Booking System
+# BookSpot
 
-BookSpot is a web-based library seat reservation system that allows students to check seat availability and reserve their preferred seats in advance. It aims to make library visits more convenient, reduce the time spent searching for seats, and help students maintain a consistent study routine.
+BookSpot is a library seat booking app with student accounts, a live seat map, booking management, and QR check-in.
 
-✨ Features
+## Run locally
 
-- Student Authentication — Register and log in using college credentials.
+1. Create the Aiven MySQL database, then run [`backend/schema.sql`](backend/schema.sql) in its SQL console. It creates the tables used by the API and seeds the 86 seats shown in the app.
+2. Copy `backend/.env.example` to `backend/.env` and set `DB_URL` to your Aiven MySQL URL. Keep the credentials private.
+3. Copy `.env.example` to `.env` (the default API URL is `http://localhost:2007`).
+4. Run `npm install`, then `npm run dev` for the frontend and `npm start` for the API.
 
-- Interactive Seat Map — View the library layout and select seats visually.
+## Deploy
 
-- Real-Time Seat Availability — Check which seats are available or booked for a selected time slot.
+The frontend is configured for Vercel (`vercel.json`); `render.yaml` defines the API service.
 
-- Advance Seat Booking — Reserve a preferred seat for a specific duration.
+1. Run `backend/schema.sql` against Aiven before deploying the API. For the Aiven URL, use the service URI with its TLS query option (for example `ssl-mode=REQUIRED`).
+2. Deploy the repository to Render using the `render.yaml` blueprint. Set `DB_URL` to the Aiven connection URL. `FRONTEND_URL` is set to the current Vercel URL in the blueprint; update it if the frontend URL changes. The API health endpoint is `/health`.
+3. In the Vercel project settings, set `VITE_API_URL` to the deployed Render service URL (for example `https://bookspot-api.onrender.com`) and redeploy the frontend. This variable is baked into the frontend build.
+4. Keep database credentials in Render environment settings, not in source control.
 
-- Time-Slot Management — Book seats while respecting library operating hours and booking limits.
+## QR check-in
 
-- Double-Booking Prevention — Prevent overlapping reservations for the same seat.
-
-- My Bookings — View upcoming and previous reservations.
-
-- Booking Cancellation — Cancel reservations when plans change.
-
-- Preferred Seats — Make it easier to reserve favourite seats.
-
-🎯 Problem Statement
-
-Students often visit the library without knowing whether seats are available. They may waste time searching for a place to study or find that their preferred seats are already occupied.
-
-BookSpot addresses this problem by providing a digital seat reservation system that helps students check availability before arriving and plan their study sessions more effectively.
+Each confirmed booking gets a random, single-use token. The API stores only its SHA-256 hash and returns a QR code that opens `/check-in?token=…` on the frontend. Scanning it calls `POST /check-in`; check-in is allowed from the booking start through 15 minutes after the start and cannot be repeated. The schema includes `checkin_token_hash`, `token_expires_at`, and `check_in_time` for this flow.
