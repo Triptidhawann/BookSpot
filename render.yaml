@@ -1,0 +1,12 @@
+services:
+  - type: web
+    name: bookspot-api
+    runtime: node
+    plan: free
+    buildCommand: npm install
+    startCommand: npm start
+    envVars:
+      - key: DB_URL
+        sync: false
+      - key: FRONTEND_URL
+        value: https://bookspot-eta.vercel.app
