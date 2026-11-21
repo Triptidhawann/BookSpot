@@ -14,23 +14,28 @@ export default function BookingModal({
   const durationOptions = [1, 2, 3, 4, 6, 12];
 
   const calculateEndTime = (hrs) => {
-    const baseHour = 10;
-    const baseMinute = 30;
-    const totalMinutes = baseHour * 60 + baseMinute + hrs * 60;
+    const now = new Date();
+    const totalMinutes = now.getHours() * 60 + now.getMinutes() + hrs * 60;
     let endHour = Math.floor(totalMinutes / 60);
     const endMinute = totalMinutes % 60;
+    if (endHour >= 24) endHour %= 24;
     const ampm = endHour >= 12 ? 'PM' : 'AM';
-    if (endHour > 12) endHour -= 12;
+    const displayHour = endHour === 0 ? 12 : endHour > 12 ? endHour - 12 : endHour;
     const minuteStr = endMinute < 10 ? '0' + endMinute : endMinute;
-    return `${endHour}:${minuteStr} ${ampm}`;
+    return `${displayHour}:${minuteStr} ${ampm}`;
   };
 
   const handleConfirm = () => {
+    const now = new Date();
+    const formatTime = (date) => date.toLocaleTimeString([], {
+      hour: 'numeric',
+      minute: '2-digit'
+    });
     onConfirm({
       seatNo: seat.seatNo,
       zone: seat.zone,
       duration,
-      startTime: "10:30 AM",
+      startTime: formatTime(now),
       endTime: calculateEndTime(duration)
     });
   };
@@ -313,7 +318,7 @@ export default function BookingModal({
             <span className="material-symbols-outlined" style={{ fontSize: '18px', color: '#3f644a', flexShrink: 0 }}>
               check_circle
             </span>
-            <span>Requires check-in within 15 minutes of session start</span>
+            <span>Check-in available for 24 hours after booking</span>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#534344', fontSize: '13px', fontWeight: 500 }}>
             <span className="material-symbols-outlined" style={{ fontSize: '18px', color: '#3f644a', flexShrink: 0 }}>

@@ -640,10 +640,10 @@ export default function LandingView({ onNavigate, onSelectSeatAndBook }) {
               <div style={{ backgroundColor: 'var(--surface-container-low)', padding: '16px', borderRadius: 'var(--radius-default)', display: 'flex', flexDirection: 'column', gap: '8px' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--primary)', fontWeight: 600 }}>
                   <span className="material-symbols-outlined" style={{ fontSize: '20px' }}>alarm</span>
-                  <span>15-Minute Grace Period</span>
+                  <span>24-Hour Check-In Window</span>
                 </div>
                 <p className="body-sm" style={{ color: 'var(--on-surface-variant)' }}>
-                  Please check in within 15 minutes of your booking start time via the kiosk scanners or your seat is released back to fellow students.
+                  Please check in within 24 hours of booking via the QR scanner or the seat is released back to fellow students.
                 </p>
               </div>
 

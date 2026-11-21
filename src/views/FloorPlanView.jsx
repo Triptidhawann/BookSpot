@@ -101,8 +101,6 @@ export default function FloorPlanView({ onNavigate, onBookingConfirmed, initialS
         roll: user.roll_no,
         name: user.name,
         duration: bookingDetails.duration,
-        startTime: bookingDetails.startTime,
-        endTime: bookingDetails.endTime,
         status: 'CONFIRMED'
       });
 
