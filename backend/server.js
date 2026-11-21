@@ -9,7 +9,23 @@ import generateBookingQR from "./generateBookingQR.js";
 dotenv.config({ path: new URL("./.env", import.meta.url) });
 const app = express();
 const config = process.env.DB_URL;
-const mysql = mysql2.createConnection(config);
+let mysql;
+
+if (config?.startsWith("mysql://")) {
+    const databaseUrl = new URL(config);
+    mysql = mysql2.createConnection({
+        host: databaseUrl.hostname,
+        port: Number(databaseUrl.port || 3306),
+        user: decodeURIComponent(databaseUrl.username),
+        password: decodeURIComponent(databaseUrl.password),
+        database: decodeURIComponent(databaseUrl.pathname.replace(/^\//, "")),
+        ssl: databaseUrl.searchParams.get("ssl-mode")
+            ? { rejectUnauthorized: false }
+            : undefined
+    });
+} else {
+    mysql = mysql2.createConnection(config);
+}
 
 app.use(express.json());
 app.use(cors());
