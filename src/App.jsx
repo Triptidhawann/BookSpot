@@ -6,9 +6,11 @@ import SignInView from './views/SignInView';
 import SignUpView from './views/SignUpView';
 import AdminLoginView from './views/admin/AdminLoginView';
 import AdminDashboardView from './views/admin/AdminDashboardView';
+import CheckInView from './views/CheckInView';
 import './App.css';
 
 export default function App() {
+  const [isCheckInRoute, setIsCheckInRoute] = useState(() => window.location.pathname === '/check-in');
   const [activeView, setActiveView] = useState('landing');
   const [selectedSeatFromLanding, setSelectedSeatFromLanding] = useState(null);
   const [loggedInUser, setLoggedInUser] = useState(() => {
@@ -30,6 +32,10 @@ export default function App() {
   });
 
   const handleNavigate = (view) => {
+    if (isCheckInRoute) {
+      window.history.replaceState({}, '', '/');
+      setIsCheckInRoute(false);
+    }
     setActiveView(view);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
@@ -42,6 +48,12 @@ export default function App() {
 
   return (
     <div className="bookspot-app" style={{ minHeight: '100vh', width: '100%' }}>
+      {isCheckInRoute && (
+        <CheckInView onNavigate={handleNavigate} />
+      )}
+
+      {!isCheckInRoute && (
+        <>
       {activeView === 'landing' && (
         <LandingView
           onNavigate={handleNavigate}
@@ -94,6 +106,8 @@ export default function App() {
             onAdminAuthenticated={setAdminUser}
           />
         )
+      )}
+        </>
       )}
     </div>
   );

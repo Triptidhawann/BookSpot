@@ -1,0 +1,21 @@
+import crypto from "crypto";
+import QRCode from "qrcode";
+
+export default async function generateBookingQR(frontendUrl, tokenExpiresAt) {
+    const token = crypto.randomBytes(32).toString("hex");
+    const tokenHash = crypto
+        .createHash("sha256")
+        .update(token)
+        .digest("hex");
+
+    const baseUrl = (frontendUrl || "http://localhost:5173").replace(/\/$/, "");
+    const checkInUrl = `${baseUrl}/check-in?token=${token}`;
+    const qrCode = await QRCode.toDataURL(checkInUrl);
+
+    return {
+        token,
+        tokenHash,
+        qrCode,
+        tokenExpiresAt
+    };
+}

@@ -4,6 +4,7 @@ import Header from '../components/Header';
 import ActiveBookingCard from '../components/ActiveBookingCard';
 import Toast from '../components/Toast';
 import axios from 'axios'
+import { API_URL } from '../utils/api';
 import {
   currentUser,
   campusStatus,
@@ -11,6 +12,38 @@ import {
   upcomingBookings as initialUpcoming,
   studyHistory
 } from '../data/mockData';
+
+const formatBookingTime = (value) => {
+  if (!value) return '';
+
+  const rawValue = String(value).trim();
+  const timeMatch = rawValue.match(/(?:T|\s|^)(\d{1,2}):(\d{2})(?::\d{2})?\s*(AM|PM)?/i);
+  if (!timeMatch) return rawValue;
+
+  let hours = Number(timeMatch[1]);
+  const minutes = Number(timeMatch[2]);
+  const meridiem = timeMatch[3]?.toUpperCase();
+
+  if (meridiem === 'PM' && hours < 12) hours += 12;
+  if (meridiem === 'AM' && hours === 12) hours = 0;
+
+  return new Date(1970, 0, 1, hours, minutes).toLocaleTimeString([], {
+    hour: 'numeric',
+    minute: '2-digit'
+  });
+};
+
+const normalizeStudentBooking = (booking) => ({
+  ...booking,
+  seatNo: booking.seatNo || booking.seat_no,
+  startTime: formatBookingTime(booking.startTime || booking.start_time),
+  endTime: formatBookingTime(booking.endTime || booking.end_time),
+  durationHours: booking.durationHours || booking.duration_hours || booking.duration,
+  checkInTime: booking.checkInTime || booking.check_in_time,
+  checkOutTime: booking.checkOutTime || booking.check_out_time,
+  tokenExpiresAt: booking.tokenExpiresAt || booking.token_expires_at,
+  notes: booking.notes || ''
+});
 
 export default function DashboardView({ onNavigate, user }) {
   const dashboardUser = {
@@ -32,11 +65,15 @@ export default function DashboardView({ onNavigate, user }) {
       }
 
       try {
-        const response = await axios.get('http://localhost:2007/getBookedSeat', {
+        const response = await axios.get(`${API_URL}/getBookedSeat`, {
           params: { roll_no: user.roll_no }
         });
         console.log('Booked seat response:', response.data);
-        setActiveBooking(response.data.bookings?.[0] || null);
+        setActiveBooking(
+          response.data.bookings?.[0]
+            ? normalizeStudentBooking(response.data.bookings[0])
+            : null
+        );
 
       } catch (error) {
         console.error('Failed to load booked seat:', error.response?.data || error.message);
@@ -63,9 +100,36 @@ export default function DashboardView({ onNavigate, user }) {
     showToast('Reservation Extended', 'Added +1 hour to your session at Seat C04.');
   };
 
-  const handleCancelBooking = () => {
-    setActiveBooking(null);
-    showToast('Booking Released', 'Seat C04 has been made available to fellow students.');
+  const handleCancelBooking = async () => {
+    if (!activeBooking?.booking_id && !activeBooking?.bookingId) return;
+
+    try {
+      await axios.post(`${API_URL}/cancelBooking`, {
+        bookingId: activeBooking.booking_id || activeBooking.bookingId,
+        rollNo: user?.roll_no
+      });
+      setActiveBooking(null);
+      showToast('Booking Released', `Seat ${activeBooking.seatNo} has been made available.`);
+    } catch (error) {
+      showToast('Unable to cancel', error.response?.data?.msg || error.message);
+    }
+  };
+
+  const handleCheckOut = async () => {
+    const bookingId = activeBooking?.booking_id || activeBooking?.bookingId;
+    if (!bookingId) return;
+
+    try {
+      const response = await axios.post(`${API_URL}/check-out`, { bookingId });
+      setActiveBooking((previous) => ({
+        ...previous,
+        checkOutTime: response.data.checkOutTime,
+        status: 'COMPLETED'
+      }));
+      showToast('Check-out successful', `Seat ${activeBooking.seatNo} has been released.`);
+    } catch (error) {
+      showToast('Check-out unavailable', error.response?.data?.msg || error.message);
+    }
   };
 
   return (
@@ -416,6 +480,7 @@ export default function DashboardView({ onNavigate, user }) {
                 onExtendTime={handleExtendTime}
                 onViewOnMap={() => onNavigate('book-a-seat')}
                 onCancelBooking={handleCancelBooking}
+                onCheckOut={handleCheckOut}
               />
             )}
 

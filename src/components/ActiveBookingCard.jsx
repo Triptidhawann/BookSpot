@@ -4,7 +4,8 @@ export default function ActiveBookingCard({
   booking,
   onExtendTime,
   onViewOnMap,
-  onCancelBooking
+  onCancelBooking,
+  onCheckOut
 }) {
   if (!booking) return null;
 
@@ -52,7 +53,7 @@ export default function ActiveBookingCard({
             }}
           >
             <span style={{ width: '6px', height: '6px', borderRadius: '50%', backgroundColor: 'var(--tertiary)' }} />
-            Check-in Confirmed
+            {booking.checkInTime ? 'Check-in Confirmed' : 'Awaiting Check-in'}
           </span>
 
           <span
@@ -124,6 +125,18 @@ export default function ActiveBookingCard({
             <span className="material-symbols-outlined" style={{ fontSize: '18px' }}>map</span>
             <span>View on Map</span>
           </button>
+
+          {booking.checkInTime && !booking.checkOutTime && (
+            <button
+              type="button"
+              className="btn-primary"
+              onClick={onCheckOut}
+              style={{ padding: '10px 18px', fontSize: '14px' }}
+            >
+              <span className="material-symbols-outlined" style={{ fontSize: '18px' }}>logout</span>
+              <span>Check Out</span>
+            </button>
+          )}
 
           <button
             type="button"

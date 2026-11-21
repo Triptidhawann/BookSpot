@@ -6,6 +6,8 @@ import FloorPlanMap from '../components/FloorPlanMap';
 import FloatingBookingBar from '../components/FloatingBookingBar';
 import BookingModal from '../components/BookingModal';
 import Toast from '../components/Toast';
+import QrBookingModal from '../components/QrBookingModal';
+import { API_URL } from '../utils/api';
 import { campusStatus } from '../data/mockData';
 import { getAdminStore } from '../data/adminMockData';
 
@@ -24,11 +26,12 @@ export default function FloorPlanView({ onNavigate, onBookingConfirmed, initialS
   });
   const [searchQuery, setSearchQuery] = useState('');
   const [isBooking, setIsBooking] = useState(false);
+  const [qrBooking, setQrBooking] = useState(null);
 
   useEffect(() => {
     const loadSeats = async () => {
       try {
-          const response = await axios.get('/api/getSeatsData');
+          const response = await axios.get(`${API_URL}/getSeatsData`);
           if (Array.isArray(response.data) && response.data.length > 0) {
             setSeats(response.data);
           }
@@ -94,7 +97,7 @@ export default function FloorPlanView({ onNavigate, onBookingConfirmed, initialS
 
     setIsBooking(true);
     try {
-      const response = await axios.post('http://localhost:2007/bookSeat', {
+      const response = await axios.post(`${API_URL}/bookSeat`, {
         seatNo: bookingDetails.seatNo,
         zone: bookingDetails.zone,
         roll: user.roll_no,
@@ -119,29 +122,22 @@ export default function FloorPlanView({ onNavigate, onBookingConfirmed, initialS
         title: `Seat ${bookingDetails.seatNo} Reserved`,
         subtitle: `Booked for ${bookingDetails.duration} hours in Zone ${bookingDetails.zone}.`
       });
+      setQrBooking({
+        seatNo: bookingDetails.seatNo,
+        qrCode: response.data.qrCode
+      });
 
       onBookingConfirmed?.(bookingDetails);
       setTimeout(() => {
         setToastData((prev) => ({ ...prev, show: false }));
       }, 5000);
     } catch (error) {
+      setIsModalOpen(false);
       setToastData({
         show: true,
         title: 'Booking failed',
         subtitle: error.response?.data?.msg || error.message || 'Unable to reserve this seat.'
       });
-      // Client-side fallback if backend server is not running
-      setIsModalOpen(false);
-      setMyBookedSeatIds((prev) => [...new Set([...prev, bookingDetails.seatNo])]);
-      setSeats((prev) =>
-        prev.map((s) => (s.seatNo === bookingDetails.seatNo ? { ...s, isBooked: 'booked' } : s))
-      );
-      setToastData({
-        show: true,
-        title: `Seat ${bookingDetails.seatNo} Reserved`,
-        subtitle: `Booked for ${bookingDetails.duration} hours in Zone ${bookingDetails.zone}.`
-      });
-      onBookingConfirmed?.(bookingDetails);
     } finally {
       setIsBooking(false);
     }
@@ -308,6 +304,12 @@ export default function FloorPlanView({ onNavigate, onBookingConfirmed, initialS
         onClose={() => setIsModalOpen(false)}
         onConfirm={handleConfirmReservation}
         isSubmitting={isBooking}
+      />
+
+      <QrBookingModal
+        booking={qrBooking}
+        qrCode={qrBooking?.qrCode}
+        onClose={() => setQrBooking(null)}
       />
 
       {/* Toast Notification */}
