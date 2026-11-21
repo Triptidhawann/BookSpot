@@ -312,6 +312,76 @@ try {
     
 })
 
+async function cleanupExpiredBookings(db) {
+    try {
+        await db.beginTransaction();
+        const indiaNowSql = "UTC_TIMESTAMP() + INTERVAL 330 MINUTE";
+        const [expired] = await db.query(
+            `SELECT booking_id, seatNo
+             FROM bookings
+             WHERE status = 'CONFIRMED'
+               AND check_in_time IS NULL
+               AND token_expires_at IS NOT NULL
+               AND token_expires_at <= (${indiaNowSql})`
+        );
+
+        if (expired.length === 0) {
+            await db.commit();
+            return 0;
+        }
+
+        const bookingIds = expired.map((booking) => booking.booking_id);
+        await db.query(
+            `UPDATE bookings
+             SET status = 'CANCELLED',
+                 cancelled_at = (${indiaNowSql})
+             WHERE booking_id IN (${bookingIds.map(() => "?").join(",")})
+               AND status = 'CONFIRMED'
+               AND check_in_time IS NULL
+               AND token_expires_at <= (${indiaNowSql})`,
+            bookingIds
+        );
+
+        const seatNumbers = [...new Set(expired.map((booking) => booking.seatNo))];
+        for (const seatNo of seatNumbers) {
+            const [active] = await db.query(
+                `SELECT booking_id
+                 FROM bookings
+                 WHERE seatNo = ?
+                   AND status IN ('CONFIRMED', 'CHECKED_IN')
+                   AND check_out_time IS NULL
+                 LIMIT 1`,
+                [seatNo]
+            );
+            if (active.length === 0) {
+                await db.query("UPDATE seats SET isBooked = 'available' WHERE seatNo = ?", [seatNo]);
+            }
+        }
+
+        await db.commit();
+        return expired.length;
+    } catch (err) {
+        await db.rollback();
+        throw err;
+    }
+}
+
+app.post("/cleanupExpiredBookings", async (_req, res) => {
+    try {
+        const releasedCount = await cleanupExpiredBookings(mysql.promise());
+        return res.json({
+            status: true,
+            releasedCount,
+            msg: releasedCount === 0
+                ? "No expired bookings to release"
+                : `${releasedCount} expired booking(s) cancelled and seats released`
+        });
+    } catch (err) {
+        console.error("Expired booking cleanup failed:", err.message);
+        return res.status(500).json({ status: false, msg: "Unable to release expired bookings" });
+    }
+});
+
 app.post("/check-in", async (req, res) => {
     const rollNo = String(req.body?.rollNo || req.body?.roll_no || req.query?.rollNo || req.query?.roll_no || "").trim();
     if (!rollNo) {
@@ -320,6 +390,7 @@ app.post("/check-in", async (req, res) => {
 
     try {
         const db = mysql.promise();
+        await cleanupExpiredBookings(db);
         const [rows] = await db.query(
             `SELECT booking_id, seatNo, status, start_time, check_in_time,
                     checkin_token_hash, token_expires_at,
@@ -513,11 +584,21 @@ const port = process.env.PORT || 2007;
 const server = app.listen(port, async () => {
     try {
         await mysql.promise().query("SELECT 1");
+        await cleanupExpiredBookings(mysql.promise());
         console.log(`Server listening on port ${port}; database connected`);
     } catch (err) {
         console.error("Initial database connection failed:", err.message);
     }
 });
+
+const expiryCleanupTimer = setInterval(async () => {
+    try {
+        await cleanupExpiredBookings(mysql.promise());
+    } catch (err) {
+        console.error("Scheduled expired booking cleanup failed:", err.message);
+    }
+}, 60 * 1000);
+expiryCleanupTimer.unref();
 
 process.on("SIGTERM", () => {
     server.close(() => mysql.end(() => process.exit(0)));
