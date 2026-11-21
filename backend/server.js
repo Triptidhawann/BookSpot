@@ -31,6 +31,7 @@ if (config.startsWith("mysql://") || config.startsWith("mysql2://")) {
     dbConfig = config;
 }
 const mysql = mysql2.createConnection(dbConfig);
+mysql.query("SET time_zone = '+05:30'");
 
 const defaultOrigins = [
     "http://localhost:5173",
@@ -175,24 +176,37 @@ app.post("/bookSeat", async (req, res) => {
         if (hours < 1 || hours > 12 || minutes > 59) return null;
         if (match[3].toUpperCase() === "PM" && hours !== 12) hours += 12;
         if (match[3].toUpperCase() === "AM" && hours === 12) hours = 0;
-        const result = new Date();
-        result.setHours(hours, minutes, 0, 0);
-        return result;
+        const parts = new Intl.DateTimeFormat("en-CA", {
+            timeZone: "Asia/Kolkata",
+            year: "numeric",
+            month: "2-digit",
+            day: "2-digit"
+        }).formatToParts(new Date());
+        const dateParts = Object.fromEntries(parts.map((part) => [part.type, part.value]));
+        const date = `${dateParts.year}-${dateParts.month}-${dateParts.day}`;
+        return {
+            sql: `${date} ${String(hours).padStart(2, "0")}:${String(minutes).padStart(2, "0")}:00`,
+            totalMinutes: hours * 60 + minutes
+        };
     };
     const startTime = parseTime(requestedStartTime);
     const endTime = parseTime(requestedEndTime);
-    if (!startTime || !endTime || endTime <= startTime) {
+    if (!startTime || !endTime || endTime.totalMinutes <= startTime.totalMinutes) {
         return res.status(400).json({ status: false, msg: "Invalid start or end time" });
     }
     const db = mysql.promise();
 
     try {
-        const tokenExpiresAt = new Date(startTime.getTime() + 15 * 60 * 1000);
+        const expiryMinutes = startTime.totalMinutes + 15;
+        const expiryHours = Math.floor(expiryMinutes / 60) % 24;
+        const expiryMinute = expiryMinutes % 60;
+        const expiryDate = startTime.sql.slice(0, 10);
+        const tokenExpiresAt = `${expiryDate} ${String(expiryHours).padStart(2, "0")}:${String(expiryMinute).padStart(2, "0")}:00`;
         const qr = await generateBookingQR(process.env.FRONTEND_URL, tokenExpiresAt);
         await db.beginTransaction();
         const [bookingResult] = await db.query(
             "INSERT INTO bookings (seatNo, student_id, name, start_time, end_time, status, checkin_token_hash, token_expires_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
-            [seatNo, rollNo, name, startTime, endTime, bookingStatus, qr.tokenHash, tokenExpiresAt]
+            [seatNo, rollNo, name, startTime.sql, endTime.sql, bookingStatus, qr.tokenHash, tokenExpiresAt]
         );
 
         const [seatResult] = await db.query(
@@ -309,7 +323,9 @@ app.post("/check-in", async (req, res) => {
         const db = mysql.promise();
         const [rows] = await db.query(
             `SELECT booking_id, seatNo, status, start_time, check_in_time,
-                    checkin_token_hash, token_expires_at
+                    checkin_token_hash, token_expires_at,
+                    (start_time > NOW()) AS before_start,
+                    (token_expires_at <= NOW()) AS expired
              FROM bookings
              WHERE student_id = ?
              ORDER BY booking_id DESC`,
@@ -335,10 +351,10 @@ app.post("/check-in", async (req, res) => {
         if (booking.status !== "CONFIRMED") {
             return res.status(409).json({ status: false, msg: "Booking is not available for check-in" });
         }
-        if (booking.start_time && new Date(booking.start_time) > new Date()) {
+        if (booking.before_start) {
             return res.status(425).json({ status: false, msg: "Check-in is not available before the session start time" });
         }
-        if (!booking.token_expires_at || new Date(booking.token_expires_at) <= new Date()) {
+        if (!booking.token_expires_at || booking.expired) {
             return res.status(410).json({ status: false, msg: "Check-in token has expired" });
         }
 
