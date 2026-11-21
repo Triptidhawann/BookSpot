@@ -6,7 +6,6 @@ import FloorPlanMap from '../components/FloorPlanMap';
 import FloatingBookingBar from '../components/FloatingBookingBar';
 import BookingModal from '../components/BookingModal';
 import Toast from '../components/Toast';
-import QrBookingModal from '../components/QrBookingModal';
 import { API_URL } from '../utils/api';
 import { campusStatus } from '../data/mockData';
 import { getAdminStore } from '../data/adminMockData';
@@ -26,7 +25,6 @@ export default function FloorPlanView({ onNavigate, onBookingConfirmed, initialS
   });
   const [searchQuery, setSearchQuery] = useState('');
   const [isBooking, setIsBooking] = useState(false);
-  const [qrBooking, setQrBooking] = useState(null);
 
   useEffect(() => {
     const loadSeats = async () => {
@@ -122,11 +120,6 @@ export default function FloorPlanView({ onNavigate, onBookingConfirmed, initialS
         title: `Seat ${bookingDetails.seatNo} Reserved`,
         subtitle: `Booked for ${bookingDetails.duration} hours in Zone ${bookingDetails.zone}.`
       });
-      setQrBooking({
-        seatNo: bookingDetails.seatNo,
-        qrCode: response.data.qrCode
-      });
-
       onBookingConfirmed?.(bookingDetails);
       setTimeout(() => {
         setToastData((prev) => ({ ...prev, show: false }));
@@ -306,11 +299,6 @@ export default function FloorPlanView({ onNavigate, onBookingConfirmed, initialS
         isSubmitting={isBooking}
       />
 
-      <QrBookingModal
-        booking={qrBooking}
-        qrCode={qrBooking?.qrCode}
-        onClose={() => setQrBooking(null)}
-      />
 
       {/* Toast Notification */}
       <Toast

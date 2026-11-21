@@ -4,7 +4,7 @@ import dotenv from "dotenv";
 import bcrypt from "bcrypt";
 import cors from "cors";
 import crypto from "crypto";
-import generateBookingQR from "./generateBookingQR.js";
+import generateBookingQR, { generateLibraryCheckInQR } from "./generateBookingQR.js";
 
 dotenv.config({ path: new URL("./.env", import.meta.url) });
 const app = express();
@@ -46,6 +46,20 @@ const allowedOrigins = Array.from(new Set([...defaultOrigins, ...envOrigins]));
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 app.use(cors({ origin: allowedOrigins }));
+
+app.get("/library-checkin-qr", async (_req, res) => {
+    try {
+        const qrCode = await generateLibraryCheckInQR(process.env.FRONTEND_URL);
+        return res.json({
+            status: true,
+            checkInUrl: `${(process.env.FRONTEND_URL || "http://localhost:5173").replace(/\/$/, "")}/check-in`,
+            qrCode
+        });
+    } catch (err) {
+        console.error("Library QR generation failed:", err.message);
+        return res.status(500).json({ status: false, msg: "Unable to generate library check-in QR" });
+    }
+});
 
 app.get("/health", async (_req, res) => {
     try {
@@ -199,8 +213,6 @@ app.post("/bookSeat", async (req, res) => {
             status: true,
             msg: "Seat reserved successfully",
             bookingId: bookingResult.insertId,
-            qrToken: qr.token,
-            qrCode: qr.qrCode,
             booking: {
                 bookingId: bookingResult.insertId,
                 seatNo,
@@ -288,27 +300,35 @@ try {
 })
 
 app.post("/check-in", async (req, res) => {
-    const token = req.body?.token || req.query?.token;
-    if (typeof token !== "string" || !token) {
-        return res.status(400).json({ status: false, msg: "Check-in token is required" });
+    const rollNo = String(req.body?.rollNo || req.body?.roll_no || req.query?.rollNo || req.query?.roll_no || "").trim();
+    if (!rollNo) {
+        return res.status(400).json({ status: false, msg: "Roll number is required" });
     }
-
-    const tokenHash = crypto.createHash("sha256").update(token).digest("hex");
 
     try {
         const db = mysql.promise();
         const [rows] = await db.query(
-            `SELECT booking_id, seatNo, status, start_time, check_in_time, token_expires_at
+            `SELECT booking_id, seatNo, status, start_time, check_in_time,
+                    checkin_token_hash, token_expires_at
              FROM bookings
-             WHERE checkin_token_hash = ?`,
-            [tokenHash]
+             WHERE student_id = ?
+             ORDER BY booking_id DESC`,
+            [rollNo]
         );
 
         if (rows.length === 0) {
-            return res.status(404).json({ status: false, msg: "Invalid check-in token" });
+            return res.status(404).json({ status: false, msg: "No booking found for this roll number" });
         }
 
-        const booking = rows[0];
+        const booking = rows.find((row) =>
+            row.status === "CONFIRMED" &&
+            !row.check_in_time &&
+            typeof row.checkin_token_hash === "string" &&
+            /^[a-f0-9]{64}$/i.test(row.checkin_token_hash)
+        );
+        if (!booking) {
+            return res.status(409).json({ status: false, msg: "No valid booking is available for check-in" });
+        }
         if (booking.check_in_time) {
             return res.status(409).json({ status: false, msg: "Booking has already been checked in" });
         }

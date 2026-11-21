@@ -9,7 +9,7 @@ export default async function generateBookingQR(frontendUrl, tokenExpiresAt) {
         .digest("hex");
 
     const baseUrl = (frontendUrl || "http://localhost:5173").replace(/\/$/, "");
-    const checkInUrl = `${baseUrl}/check-in?token=${token}`;
+    const checkInUrl = `${baseUrl}/check-in`;
     const qrCode = await QRCode.toDataURL(checkInUrl);
 
     return {
@@ -18,4 +18,9 @@ export default async function generateBookingQR(frontendUrl, tokenExpiresAt) {
         qrCode,
         tokenExpiresAt
     };
+}
+
+export async function generateLibraryCheckInQR(frontendUrl) {
+    const baseUrl = (frontendUrl || "http://localhost:5173").replace(/\/$/, "");
+    return QRCode.toDataURL(`${baseUrl}/check-in`);
 }
