@@ -32,8 +32,16 @@ if (config.startsWith("mysql://") || config.startsWith("mysql2://")) {
 }
 const mysql = mysql2.createConnection(dbConfig);
 
-const allowedOrigins = (process.env.FRONTEND_URL || "http://localhost:5173")
-    .split(",").map((origin) => origin.trim()).filter(Boolean);
+const defaultOrigins = [
+    "http://localhost:5173",
+    "http://127.0.0.1:5173",
+    "https://bookspot-eta.vercel.app"
+];
+const envOrigins = (process.env.FRONTEND_URL || "")
+    .split(",")
+    .map((origin) => origin.trim().replace(/\/$/, ""))
+    .filter(Boolean);
+const allowedOrigins = Array.from(new Set([...defaultOrigins, ...envOrigins]));
 
 app.use(express.json());
 app.use(cors({ origin: allowedOrigins }));
