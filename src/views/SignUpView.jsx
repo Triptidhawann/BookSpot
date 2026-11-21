@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import signupIllustration from '../assets/signup_illustration.jpg';
 import axios from 'axios';
+import { API_URL } from '../utils/api';
 
 
 export default function SignUpView({ onNavigate }) {
@@ -35,7 +36,7 @@ export default function SignUpView({ onNavigate }) {
     setErrorMessage('');
 
     try {
-      const response = await axios.post('/api/register', formData);
+      const response = await axios.post(`${API_URL}/register`, formData);
       setToastMessage(response.data.msg || 'Account created successfully. Redirecting to sign in...');
       setFormData({ name: '', roll_no: '', password: '' });
       setTimeout(() => onNavigate('signin'), 1200);

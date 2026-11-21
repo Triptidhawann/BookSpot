@@ -1,6 +1,7 @@
 import React, { useEffect, useState, useMemo } from 'react';
 import axios from 'axios';
 import { getAdminStore, saveAdminStore, resetAdminStore } from '../../data/adminMockData';
+import { API_URL } from '../../utils/api';
 
 const normalizeSeats = (seats) => {
   const uniqueSeats = new Map();
@@ -94,7 +95,7 @@ export default function AdminDashboardView({ onNavigate, adminUser }) {
   useEffect(() => {
     const loadStudents = async () => {
       try {
-        const response = await axios.get('/api/getStudentsData');
+        const response = await axios.get(`${API_URL}/getStudentsData`);
         if (!Array.isArray(response.data)) {
           throw new Error('Students API returned an invalid response.');
         }
@@ -128,7 +129,7 @@ export default function AdminDashboardView({ onNavigate, adminUser }) {
   useEffect(() => {
     const loadSeats = async () => {
       try {
-        const response = await axios.get('/api/getSeatsData');
+        const response = await axios.get(`${API_URL}/getSeatsData`);
         if (!Array.isArray(response.data)) {
           throw new Error('Seats API returned an invalid response.');
         }
@@ -151,7 +152,7 @@ export default function AdminDashboardView({ onNavigate, adminUser }) {
   useEffect(() => {
     const loadBookings = async () => {
       try {
-        const response = await axios.get('/api/getBookingsData');
+        const response = await axios.get(`${API_URL}/getBookingsData`);
         if (!Array.isArray(response.data)) {
           throw new Error('Bookings API returned an invalid response.');
         }

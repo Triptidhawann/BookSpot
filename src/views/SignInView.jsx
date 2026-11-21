@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import signinIllustration from '../assets/signin_illustration.jpg';
 import axios from 'axios';
+import { API_URL } from '../utils/api';
 
 export default function SignInView({ onNavigate, onAuthenticated }) {
   const [email, setEmail] = useState('');
@@ -27,7 +28,7 @@ export default function SignInView({ onNavigate, onAuthenticated }) {
     const rollToSubmit = email.trim();
 
     try {
-      const response = await axios.post('/api/login', {
+      const response = await axios.post(`${API_URL}/login`, {
         roll_no: rollToSubmit,
         password
       });
