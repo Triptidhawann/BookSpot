@@ -31,7 +31,6 @@ if (config.startsWith("mysql://") || config.startsWith("mysql2://")) {
     dbConfig = config;
 }
 const mysql = mysql2.createConnection(dbConfig);
-mysql.query("SET time_zone = '+05:30'");
 
 const defaultOrigins = [
     "http://localhost:5173",
@@ -324,8 +323,8 @@ app.post("/check-in", async (req, res) => {
         const [rows] = await db.query(
             `SELECT booking_id, seatNo, status, start_time, check_in_time,
                     checkin_token_hash, token_expires_at,
-                    (start_time > NOW()) AS before_start,
-                    (token_expires_at <= NOW()) AS expired
+                    (start_time > (UTC_TIMESTAMP() + INTERVAL 330 MINUTE)) AS before_start,
+                    (token_expires_at <= (UTC_TIMESTAMP() + INTERVAL 330 MINUTE)) AS expired
              FROM bookings
              WHERE student_id = ?
              ORDER BY booking_id DESC`,
@@ -360,9 +359,10 @@ app.post("/check-in", async (req, res) => {
 
         const [result] = await db.query(
             `UPDATE bookings
-             SET check_in_time = NOW(), status = ?
+             SET check_in_time = (UTC_TIMESTAMP() + INTERVAL 330 MINUTE), status = ?
              WHERE booking_id = ? AND status = 'CONFIRMED' AND check_in_time IS NULL
-               AND start_time <= NOW() AND token_expires_at > NOW()`,
+               AND start_time <= (UTC_TIMESTAMP() + INTERVAL 330 MINUTE)
+               AND token_expires_at > (UTC_TIMESTAMP() + INTERVAL 330 MINUTE)`,
             ["CHECKED_IN", booking.booking_id]
         );
 
@@ -423,7 +423,7 @@ app.post("/check-out", async (req, res) => {
 
         await db.beginTransaction();
         const [result] = await db.query(
-            "UPDATE bookings SET check_out_time = NOW(), status = ? WHERE booking_id = ? AND check_out_time IS NULL",
+            "UPDATE bookings SET check_out_time = (UTC_TIMESTAMP() + INTERVAL 330 MINUTE), status = ? WHERE booking_id = ? AND check_out_time IS NULL",
             ["COMPLETED", booking.booking_id]
         );
 
@@ -485,7 +485,7 @@ app.post("/cancelBooking", async (req, res) => {
         }
 
         const [result] = await db.query(
-            "UPDATE bookings SET status = ?, check_out_time = NOW() WHERE booking_id = ? AND student_id = ?",
+            "UPDATE bookings SET status = ?, check_out_time = (UTC_TIMESTAMP() + INTERVAL 330 MINUTE) WHERE booking_id = ? AND student_id = ?",
             ["CANCELLED", bookingId, rollNo]
         );
 
