@@ -8,14 +8,18 @@ export default function BookingModal({
   isSubmitting = false
 }) {
   const [duration, setDuration] = useState(3);
+  const [startTime, setStartTime] = useState(() => {
+    const now = new Date();
+    return `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+  });
 
   if (!isOpen || !seat) return null;
 
   const durationOptions = [1, 2, 3, 4, 6, 12];
 
-  const calculateEndTime = (hrs) => {
-    const now = new Date();
-    const totalMinutes = now.getHours() * 60 + now.getMinutes() + hrs * 60;
+  const calculateEndTime = (timeValue, hrs) => {
+    const [hours, minutes] = timeValue.split(':').map(Number);
+    const totalMinutes = hours * 60 + minutes + hrs * 60;
     let endHour = Math.floor(totalMinutes / 60);
     const endMinute = totalMinutes % 60;
     if (endHour >= 24) endHour %= 24;
@@ -25,18 +29,20 @@ export default function BookingModal({
     return `${displayHour}:${minuteStr} ${ampm}`;
   };
 
+  const formatStartTime = (timeValue) => {
+    const [hours, minutes] = timeValue.split(':').map(Number);
+    const ampm = hours >= 12 ? 'PM' : 'AM';
+    const displayHour = hours === 0 ? 12 : hours > 12 ? hours - 12 : hours;
+    return `${displayHour}:${String(minutes).padStart(2, '0')} ${ampm}`;
+  };
+
   const handleConfirm = () => {
-    const now = new Date();
-    const formatTime = (date) => date.toLocaleTimeString([], {
-      hour: 'numeric',
-      minute: '2-digit'
-    });
     onConfirm({
       seatNo: seat.seatNo,
       zone: seat.zone,
       duration,
-      startTime: formatTime(now),
-      endTime: calculateEndTime(duration)
+      startTime: formatStartTime(startTime),
+      endTime: calculateEndTime(startTime, duration)
     });
   };
 
@@ -245,7 +251,22 @@ export default function BookingModal({
                 lineHeight: 1.2
               }}
             >
-              10:30 AM
+              <input
+                type="time"
+                value={startTime}
+                onChange={(event) => setStartTime(event.target.value)}
+                aria-label="Booking start time"
+                style={{
+                  width: '112px',
+                  border: '1px solid #d9bfc2',
+                  borderRadius: '8px',
+                  backgroundColor: '#ffffff',
+                  color: '#1e1a1d',
+                  fontWeight: 800,
+                  fontSize: '16px',
+                  padding: '6px 8px'
+                }}
+              />
             </div>
           </div>
 
@@ -297,7 +318,7 @@ export default function BookingModal({
                 lineHeight: 1.2
               }}
             >
-              {calculateEndTime(duration)}
+              {calculateEndTime(startTime, duration)}
             </div>
           </div>
         </div>
