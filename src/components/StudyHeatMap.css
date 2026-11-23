@@ -1,0 +1,93 @@
+.profile-heatmap-card {
+  min-width: 0;
+  padding: 24px;
+  overflow: hidden;
+  border: 1px solid rgba(216, 193, 194, 0.55);
+  border-radius: 22px;
+  background: #fff;
+  box-shadow: 0 8px 24px rgba(67, 38, 42, 0.045);
+}
+
+.profile-heatmap-heading {
+  margin-bottom: 22px;
+}
+
+.profile-heatmap-heading h2 {
+  margin: 4px 0 4px;
+  color: var(--on-surface);
+  font-size: 20px;
+  letter-spacing: -0.025em;
+}
+
+.profile-heatmap-heading p {
+  margin: 0;
+  color: var(--on-surface-variant);
+  font-size: 13px;
+}
+
+.profile-year-select select {
+  padding: 9px 32px 9px 12px;
+  border: 1px solid var(--outline-variant);
+  border-radius: 10px;
+  background: var(--surface-container-lowest);
+  color: var(--on-surface);
+  font: inherit;
+}
+
+.profile-heatmap-scroll {
+  overflow-x: auto;
+  padding: 4px 0 8px;
+}
+
+.profile-heatmap-grid {
+  display: grid;
+  grid-template-rows: 18px repeat(7, 12px);
+  grid-auto-flow: column;
+  gap: 4px;
+  width: max-content;
+  min-width: 100%;
+}
+
+.profile-heatmap-month {
+  color: #817477;
+  font-size: 10px;
+  line-height: 14px;
+}
+
+.profile-heatmap-weekday {
+  align-self: center;
+  color: #8c8083;
+  font-size: 9px;
+}
+
+.profile-heatmap-cell {
+  display: block;
+  width: 12px;
+  height: 12px;
+  border-radius: 3px;
+  background: #f2edef;
+}
+
+.profile-heatmap-cell.level-1 { background: #f0c9c9; }
+.profile-heatmap-cell.level-2 { background: #df999d; }
+.profile-heatmap-cell.level-3 { background: #bd6f76; }
+.profile-heatmap-cell.level-4 { background: #8b484f; }
+
+.profile-heatmap-legend {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 5px;
+  margin-top: 8px;
+  color: #817477;
+  font-size: 10px;
+}
+
+.profile-heatmap-legend .profile-heatmap-cell {
+  width: 10px;
+  height: 10px;
+}
+
+@media (max-width: 600px) {
+  .profile-heatmap-card { padding: 18px; }
+}

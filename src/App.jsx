@@ -9,6 +9,7 @@ import SignUpView from './views/SignUpView';
 import AdminLoginView from './views/admin/AdminLoginView';
 import AdminDashboardView from './views/admin/AdminDashboardView';
 import CheckInView from './views/CheckInView';
+import ProfileView from './views/ProfileView';
 import { API_URL, api, setStudentToken } from './utils/api';
 import './App.css';
 
@@ -34,6 +35,11 @@ function readSavedUser(key) {
   } catch {
     return null;
   }
+}
+
+function applyLocalProfile(user) {
+  const savedProfile = readSavedUser('bookspot_profile');
+  return savedProfile?.roll_no === user?.roll_no ? { ...user, ...savedProfile } : user;
 }
 
 function getTokenExpiry(token) {
@@ -71,7 +77,7 @@ function AppRoutes() {
   };
 
   const handleAuthenticated = (user) => {
-    setLoggedInUser(user);
+    setLoggedInUser(applyLocalProfile(user));
     setAuthLoading(false);
   };
 
@@ -98,8 +104,9 @@ function AppRoutes() {
       .then(({ data }) => {
         if (!isCurrent) return;
         if (!data.status || !data.user) throw new Error('Invalid session response');
-        localStorage.setItem('bookspot_user', JSON.stringify(data.user));
-        setLoggedInUser(data.user);
+        const profile = applyLocalProfile(data.user);
+        localStorage.setItem('bookspot_user', JSON.stringify(profile));
+        setLoggedInUser(profile);
       })
       .catch((error) => {
         if (!isCurrent) return;
@@ -149,6 +156,11 @@ function AppRoutes() {
     : loggedInUser
       ? <BookingHistoryView onNavigate={handleNavigate} onSignOut={handleSignOut} user={loggedInUser} />
       : <Navigate to="/signin" replace />;
+  const profilePage = authLoading
+    ? <div role="status" style={{ padding: '24px' }}>Checking your session…</div>
+    : loggedInUser
+      ? <ProfileView onNavigate={handleNavigate} onSignOut={handleSignOut} onProfileUpdated={setLoggedInUser} user={loggedInUser} />
+      : <Navigate to="/signin" replace />;
 
   return (
     <div className="bookspot-app" style={{ minHeight: '100vh', width: '100%' }}>
@@ -161,7 +173,7 @@ function AppRoutes() {
         <Route path="/dashboard" element={dashboardPage} />
         <Route path="/my-bookings" element={dashboardPage} />
         <Route path="/booking-history" element={bookingHistoryPage} />
-        <Route path="/profile" element={dashboardPage} />
+        <Route path="/profile" element={profilePage} />
         <Route path="/admin" element={<AdminLoginView onNavigate={handleNavigate} onAdminAuthenticated={setAdminUser} />} />
         <Route path="/admin/login" element={<Navigate to="/admin" replace />} />
         <Route

@@ -401,6 +401,54 @@ app.get("/booking-history", auth, requireStudent, async (req, res) => {
     }
 });
 
+app.get("/study-activity", auth, requireStudent, async (req, res) => {
+    const year = Number(req.query.year);
+    const currentYear = new Date(Date.now() + 330 * 60 * 1000).getUTCFullYear();
+    if (!Number.isInteger(year) || year < 2000 || year > currentYear) {
+        return res.status(400).json({ status: false, msg: "A valid activity year is required" });
+    }
+
+    const startDate = `${year}-01-01 00:00:00`;
+    const endDate = `${year + 1}-01-01 00:00:00`;
+    try {
+        const [rows] = await mysql.promise().execute(
+            `SELECT
+                 DATE_FORMAT(DATE(check_in_time), '%Y-%m-%d') AS activity_date,
+                ROUND(
+                SUM(
+                    TIMESTAMPDIFF(
+                        SECOND,
+                        check_in_time,
+                        check_out_time
+                    )
+                ) / 60,
+                2
+            ) AS total_minutes
+             FROM bookings
+             WHERE student_id = ?
+               AND check_in_time IS NOT NULL
+               AND check_out_time IS NOT NULL
+               AND check_out_time > check_in_time
+               AND check_in_time >= ?
+               AND check_in_time < ?
+             GROUP BY DATE_FORMAT(DATE(check_in_time), '%Y-%m-%d')
+             ORDER BY activity_date`,
+            [req.user.id, startDate, endDate]
+        );
+        console.log([rows]);
+        return res.json({ status: true, activity: rows });
+    } catch (err) {
+        console.error("Study activity lookup failed:", {
+            code: err.code,
+            message: err.message,
+            sqlMessage: err.sqlMessage,
+            studentId: req.user.id,
+            year
+        });
+        return res.status(500).json({ status: false, msg: "Unable to load study activity" });
+    }
+});
+
 async function cleanupExpiredBookings(db) {
     try {
         await db.beginTransaction();
