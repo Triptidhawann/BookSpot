@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import Sidebar from '../components/Sidebar';
 import Header from '../components/Header';
 import StudyHeatMap from '../components/StudyHeatMap';
@@ -31,37 +31,18 @@ const departmentFromRollNo = (rollNo) => {
   return departments[code] || 'Department not provided';
 };
 
-const parseWallTime = (value) => {
-  if (!value) return null;
-  const match = String(value).match(/^(\d{4})-(\d{2})-(\d{2})[T ](\d{2}):(\d{2})(?::(\d{2}))?/);
-  if (!match) return null;
-  const [, year, month, day, hour, minute, second = '00'] = match;
-  return {
-    day: `${year}-${month}-${day}`,
-    timestamp: Date.UTC(Number(year), Number(month) - 1, Number(day), Number(hour), Number(minute), Number(second))
-  };
-};
-
 const formatHours = (minutes) => {
   const hours = minutes / 60;
   return Number.isInteger(hours) ? String(hours) : hours.toFixed(1);
 };
 
-function calculateStats(bookings) {
+function calculateStreak(activityDates) {
   const now = new Date(Date.now() + 330 * 60 * 1000);
-  const indiaNowWall = Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate(), now.getUTCHours(), now.getUTCMinutes());
-  const sessions = bookings.map((booking) => {
-    const start = parseWallTime(booking.check_in_time);
-    const end = parseWallTime(booking.check_out_time);
-    const minutes = start ? Math.max(0, Math.floor(((end?.timestamp || indiaNowWall) - start.timestamp) / 60000)) : 0;
-    return { start, minutes };
-  }).filter((session) => session.start);
-  const activeDates = new Set(sessions.map((session) => session.start.day));
+  const activeDates = new Set(activityDates);
   const todayDate = `${now.getUTCFullYear()}-${String(now.getUTCMonth() + 1).padStart(2, '0')}-${String(now.getUTCDate()).padStart(2, '0')}`;
   const dateOrdinal = (date) => Date.UTC(...date.split('-').map(Number).map((value, index) => index === 1 ? value - 1 : value)) / 86400000;
-  const sortedDates = [...activeDates].sort((a, b) => dateOrdinal(b) - dateOrdinal(a));
   let streak = 0;
-  if (sortedDates.length) {
+  if (activeDates.size) {
     let cursor = dateOrdinal(todayDate);
     if (!activeDates.has(todayDate)) cursor -= 1;
     while (activeDates.has(new Date(cursor * 86400000).toISOString().slice(0, 10))) {
@@ -70,16 +51,11 @@ function calculateStats(bookings) {
     }
   }
 
-  return {
-    totalMinutes: sessions.reduce((total, session) => total + session.minutes, 0),
-    activeDays: activeDates.size,
-    streak,
-    visits: sessions.length
-  };
+  return streak;
 }
 
 export default function ProfileView({ onNavigate, onSignOut, user, onProfileUpdated }) {
-  const [bookings, setBookings] = useState([]);
+  const [stats, setStats] = useState({ totalMinutes: 0, activeDays: 0, streak: 0, visits: 0, activityDates: [] });
   const [isLoading, setIsLoading] = useState(true);
   const [loadError, setLoadError] = useState('');
   const [isEditing, setIsEditing] = useState(false);
@@ -87,7 +63,6 @@ export default function ProfileView({ onNavigate, onSignOut, user, onProfileUpda
   const [editedDepartment, setEditedDepartment] = useState(user?.department || departmentFromRollNo(user?.roll_no));
   const [isSaving, setIsSaving] = useState(false);
   const [saveError, setSaveError] = useState('');
-  const stats = useMemo(() => calculateStats(bookings), [bookings]);
   const rollNo = user?.roll_no || user?.rollNo || 'Roll number unavailable';
   const department = user?.department || departmentFromRollNo(rollNo);
   const initials = String(user?.name || 'Student').trim().split(/\s+/).slice(0, 2).map((part) => part[0]).join('').toUpperCase();
@@ -95,12 +70,28 @@ export default function ProfileView({ onNavigate, onSignOut, user, onProfileUpda
 
   useEffect(() => {
     let isCurrent = true;
-    api.get(`${API_URL}/booking-history`)
+    setIsLoading(true);
+    setLoadError('');
+    api.get(`${API_URL}/study-statistics`)
       .then(({ data }) => {
-        if (isCurrent) setBookings(Array.isArray(data.bookings) ? data.bookings : []);
+        if (!isCurrent) return;
+        const statistics = data?.statistics || {};
+        const activityDates = Array.isArray(statistics.activity_dates)
+          ? statistics.activity_dates.map((date) => String(date).slice(0, 10))
+          : [];
+        setStats({
+          totalMinutes: Number(statistics.total_minutes) || 0,
+          activeDays: Number(statistics.active_days) || 0,
+          streak: calculateStreak(activityDates),
+          visits: Number(statistics.library_visits) || 0,
+          activityDates
+        });
       })
       .catch((error) => {
-        if (isCurrent) setLoadError(error.response?.data?.msg || 'Could not load your study statistics.');
+        if (isCurrent) {
+          setStats({ totalMinutes: 0, activeDays: 0, streak: 0, visits: 0, activityDates: [] });
+          setLoadError(error.response?.data?.msg || 'Could not load your study statistics.');
+        }
       })
       .finally(() => {
         if (isCurrent) setIsLoading(false);

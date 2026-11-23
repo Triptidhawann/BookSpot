@@ -180,7 +180,7 @@ export default function DashboardView({ onNavigate, onSignOut, user }) {
                   Good morning, {dashboardUser.name.split(' ')[0]}!
                 </h1>
                 <p className="body-md" style={{ color: 'var(--on-surface-variant)', marginTop: '4px' }}>
-                  Central University Library • Main Campus • Academic Year 2024–25
+                  Central University Library • Main Campus • Academic Year 2026–27
                 </p>
               </div>
 

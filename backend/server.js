@@ -378,6 +378,31 @@ try {
     
 })
 
+app.get("/booking-reminders", auth, requireStudent, async (req, res) => {
+    const databaseNow = "(UTC_TIMESTAMP() + INTERVAL 330 MINUTE)";
+    try {
+        const [reminders] = await mysql.promise().query(
+            `SELECT booking_id, seatNo,
+                    CASE
+                        WHEN end_time <= ${databaseNow} THEN 'time-ended'
+                        ELSE 'ending-soon'
+                    END AS reminder_type
+             FROM bookings
+             WHERE student_id = ?
+               AND status = 'CHECKED_IN'
+               AND check_in_time IS NOT NULL
+               AND check_out_time IS NULL
+               AND end_time <= (${databaseNow} + INTERVAL 10 MINUTE)
+             ORDER BY end_time ASC`,
+            [req.user.id]
+        );
+        return res.json({ status: true, reminders });
+    } catch (err) {
+        console.error("Booking reminder lookup failed:", err.message);
+        return res.status(500).json({ status: false, msg: "Unable to check booking reminders" });
+    }
+});
+
 app.get("/booking-history", auth, requireStudent, async (req, res) => {
     try {
         const [bookings] = await mysql.promise().query(
@@ -446,6 +471,55 @@ app.get("/study-activity", auth, requireStudent, async (req, res) => {
             year
         });
         return res.status(500).json({ status: false, msg: "Unable to load study activity" });
+    }
+});
+
+app.get("/study-statistics", auth, requireStudent, async (req, res) => {
+    const studentId = req.user.id;
+    try {
+        const [totals] = await mysql.promise().query(
+            `SELECT
+                 COUNT(*) AS library_visits,
+                 COUNT(DISTINCT DATE(check_in_time)) AS active_days,
+                 COALESCE(ROUND(SUM(
+                     TIMESTAMPDIFF(SECOND, check_in_time, check_out_time)
+                 ) / 60, 2), 0) AS total_minutes
+             FROM bookings
+             WHERE student_id = ?
+               AND check_in_time IS NOT NULL
+               AND check_out_time IS NOT NULL
+               AND check_out_time > check_in_time`,
+            [studentId]
+        );
+        const [activityDates] = await mysql.promise().query(
+            `SELECT DATE_FORMAT(DATE(check_in_time), '%Y-%m-%d') AS activity_date
+             FROM bookings
+             WHERE student_id = ?
+               AND check_in_time IS NOT NULL
+               AND check_out_time IS NOT NULL
+               AND check_out_time > check_in_time
+             GROUP BY DATE_FORMAT(DATE(check_in_time), '%Y-%m-%d')
+             ORDER BY activity_date DESC`,
+            [studentId]
+        );
+        const totalsRow = totals[0] || {};
+        return res.json({
+            status: true,
+            statistics: {
+                total_minutes: Number(totalsRow.total_minutes) || 0,
+                active_days: Number(totalsRow.active_days) || 0,
+                library_visits: Number(totalsRow.library_visits) || 0,
+                activity_dates: activityDates.map((row) => row.activity_date)
+            }
+        });
+    } catch (err) {
+        console.error("Study statistics lookup failed:", {
+            code: err.code,
+            message: err.message,
+            sqlMessage: err.sqlMessage,
+            studentId
+        });
+        return res.status(500).json({ status: false, msg: "Unable to load study statistics" });
     }
 });
 

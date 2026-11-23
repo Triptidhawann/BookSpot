@@ -107,15 +107,14 @@ export default function StudyHeatMap() {
           })}
           {cells.map((cell) => {
             const level = cell.minutes === 0 ? 0 : cell.minutes < 60 ? 1 : cell.minutes < 120 ? 2 : cell.minutes < 240 ? 3 : 4;
-            const hours = Math.floor(cell.minutes / 60);
-            const minutes = cell.minutes % 60;
+            const roundedHours = Math.round(cell.minutes / 60);
             return (
               <span
                 key={cell.dateKey}
                 className={`profile-heatmap-cell level-${level}`}
                 style={{ gridColumn: cell.week + 2, gridRow: cell.weekday + 2 }}
-                title={`${cell.dateKey}: ${hours}h ${minutes}m`}
-                aria-label={`${cell.dateKey}: ${hours} hours ${minutes} minutes`}
+                title={`${cell.dateKey}: ${roundedHours} ${roundedHours === 1 ? 'hour' : 'hours'}`}
+                aria-label={`${cell.dateKey}: ${roundedHours} rounded hours`}
               />
             );
           })}
