@@ -52,5 +52,5 @@ export const upcomingBookings = [
   }
 ];
 
-
+export const studyHistory = [];
 
