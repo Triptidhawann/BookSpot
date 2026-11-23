@@ -62,7 +62,7 @@ export default function DashboardView({ onNavigate, onSignOut, user }) {
       if (!user?.roll_no) {
         return;
       }
-
+      const token = localStorage.getItem("token")
       try {
         const response = await api.get(`${API_URL}/getBookedSeat`,
           {headers:{authorization:`Bearer ${token}`}}
