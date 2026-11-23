@@ -62,11 +62,12 @@ export default function DashboardView({ onNavigate, onSignOut, user }) {
       if (!user?.roll_no) {
         return;
       }
-      const token = localStorage.getItem("token")
+      if (!localStorage.getItem('token')) {
+        setActiveBooking(null);
+        return;
+      }
       try {
-        const response = await api.get(`${API_URL}/getBookedSeat`,
-          {headers:{authorization:`Bearer ${token}`}}
-        );
+        const response = await api.get(`${API_URL}/getBookedSeat`);
         console.log('Booked seat response:', response.data);
         setActiveBooking(
           response.data.bookings?.[0]

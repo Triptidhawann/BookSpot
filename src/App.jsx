@@ -8,6 +8,7 @@ import SignUpView from './views/SignUpView';
 import AdminLoginView from './views/admin/AdminLoginView';
 import AdminDashboardView from './views/admin/AdminDashboardView';
 import CheckInView from './views/CheckInView';
+import { setStudentToken } from './utils/api';
 import './App.css';
 
 const viewPaths = {
@@ -48,7 +49,7 @@ function AppRoutes() {
   };
 
   const handleSignOut = () => {
-    localStorage.removeItem('token');
+    setStudentToken(null);
     localStorage.removeItem('bookspot_user');
     setLoggedInUser(null);
     navigate('/');

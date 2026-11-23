@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { API_URL, api } from '../../utils/api';
+import { API_URL, api, setAdminToken } from '../../utils/api';
 
 export default function AdminLoginView({ onNavigate, onAdminAuthenticated }) {
   const [username, setUsername] = useState('');
@@ -21,7 +21,7 @@ export default function AdminLoginView({ onNavigate, onAdminAuthenticated }) {
       }
 
       const session = { ...user, loggedInAt: new Date().toISOString() };
-      localStorage.setItem('bookspot_admin_token', token);
+      setAdminToken(token);
       localStorage.setItem('bookspot_admin_session', JSON.stringify(session));
       onAdminAuthenticated?.(session);
       onNavigate('admin-dashboard');

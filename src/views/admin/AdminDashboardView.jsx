@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useMemo } from 'react';
 import { getAdminStore, saveAdminStore, resetAdminStore } from '../../data/adminMockData';
-import { API_URL, api } from '../../utils/api';
+import { API_URL, api, setAdminToken } from '../../utils/api';
 
 const normalizeSeats = (seats) => {
   const uniqueSeats = new Map();
@@ -215,7 +215,7 @@ export default function AdminDashboardView({ onNavigate, adminUser, onAdminAuthe
 
   const handleAdminLogout = () => {
     localStorage.removeItem('bookspot_admin_session');
-    localStorage.removeItem('bookspot_admin_token');
+    setAdminToken(null);
     onAdminAuthenticated?.(null);
     onNavigate('admin-login');
   };

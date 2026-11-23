@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import signinIllustration from '../assets/signin_illustration.jpg';
-import { API_URL, api } from '../utils/api';
+import { API_URL, api, setStudentToken } from '../utils/api';
 
 export default function SignInView({ onNavigate, onAuthenticated }) {
   const [email, setEmail] = useState('');
@@ -35,11 +35,12 @@ export default function SignInView({ onNavigate, onAuthenticated }) {
       const data = response.data;
 
       if (data.status && data.token) {
-        localStorage.setItem('token', data.token);
+        setStudentToken(data.token);
         setToastMessage(data.msg || 'Login successful! Redirecting to student dashboard...');
         // Store authenticated user session
         if (data.user) {
           localStorage.setItem('bookspot_user', JSON.stringify(data.user));
+          localStorage.setItem("token",response.data.token)
           onAuthenticated?.(data.user);
         } else {
           const fallbackUser = { roll_no: rollToSubmit, name: 'Student ' + rollToSubmit };
