@@ -166,7 +166,7 @@ function AppRoutes() {
     <div className="bookspot-app" style={{ minHeight: '100vh', width: '100%' }}>
       <Routes>
         <Route path="/" element={<LandingView onNavigate={handleNavigate} onSelectSeatAndBook={handleSelectSeatAndBook} user={loggedInUser} authLoading={authLoading} onSignOut={handleSignOut} />} />
-        <Route path="/book-a-seat" element={<FloorPlanView onNavigate={handleNavigate} onSignOut={handleSignOut} initialSelectedSeat={selectedSeatFromLanding} />} />
+        <Route path="/book-a-seat" element={<FloorPlanView onNavigate={handleNavigate} onSignOut={handleSignOut} user={loggedInUser} authLoading={authLoading} initialSelectedSeat={selectedSeatFromLanding} />} />
         <Route path="/signin" element={<SignInView onNavigate={handleNavigate} onAuthenticated={handleAuthenticated} />} />
         <Route path="/login" element={<Navigate to="/signin" replace />} />
         <Route path="/signup" element={<SignUpView onNavigate={handleNavigate} />} />

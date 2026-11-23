@@ -11,12 +11,12 @@ import { getAdminStore } from '../data/adminMockData';
 import { useNavigate } from 'react-router-dom';
 
 
-export default function FloorPlanView({ onNavigate, onSignOut, onBookingConfirmed, initialSelectedSeat }) {
+export default function FloorPlanView({ onNavigate, onSignOut, onBookingConfirmed, initialSelectedSeat, user, authLoading }) {
   const [seats, setSeats] = useState(() => getAdminStore().seats);
   const [myBookedSeatIds, setMyBookedSeatIds] = useState([]);
   const [selectedSeat, setSelectedSeat] = useState(initialSelectedSeat || null);
   const [activeFilter, setActiveFilter] = useState('all');
-  const [isModalOpen, setIsModalOpen] = useState(!!initialSelectedSeat);
+  const [isModalOpen, setIsModalOpen] = useState(false);
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
   const [toastData, setToastData] = useState({
     show: false,
@@ -26,6 +26,16 @@ export default function FloorPlanView({ onNavigate, onSignOut, onBookingConfirme
   const [searchQuery, setSearchQuery] = useState('');
   const [isBooking, setIsBooking] = useState(false);
   const navigate = useNavigate();  
+
+  useEffect(() => {
+    if (!initialSelectedSeat || authLoading) return;
+    if (!user) {
+      onNavigate?.('signin');
+      return;
+    }
+    setSelectedSeat(initialSelectedSeat);
+    setIsModalOpen(true);
+  }, [initialSelectedSeat, authLoading, user, onNavigate]);
 
   useEffect(() => {
     const loadSeats = async () => {
@@ -65,6 +75,20 @@ export default function FloorPlanView({ onNavigate, onSignOut, onBookingConfirme
     return () => { isCurrent = false; };
   }, []);
 
+  const requireAuthentication = () => {
+    if (authLoading) {
+      setToastData({ show: true, title: 'Checking your session', subtitle: 'Please wait a moment, then try booking again.' });
+      return false;
+    }
+    if (!user) {
+      setIsModalOpen(false);
+      if (onNavigate) onNavigate('signin');
+      else navigate('/signin');
+      return false;
+    }
+    return true;
+  };
+
   const handleSelectSeat = (seat, isBookedByOther, isMyBooking) => {
     console.log(seat.seatNo);
     if (isMyBooking) {
@@ -89,6 +113,8 @@ export default function FloorPlanView({ onNavigate, onSignOut, onBookingConfirme
       return;
     }
 
+    if (!requireAuthentication()) return;
+
    // Available seat: highlight and OPEN POPUP IMMEDIATELY
     setSelectedSeat(seat);
     setIsModalOpen(true);
@@ -100,14 +126,13 @@ export default function FloorPlanView({ onNavigate, onSignOut, onBookingConfirme
 
   const handleOpenModal = () => {
     if (selectedSeat && !myBookedSeatIds.includes(selectedSeat.seatNo)) {
+      if (!requireAuthentication()) return;
       setIsModalOpen(true);
     }
   };
 
   const handleConfirmReservation = async (bookingDetails) => {
-    const savedUser = localStorage.getItem('bookspot_user');
-    const user = savedUser ? JSON.parse(savedUser) : null;
-  
+    if (!requireAuthentication()) return;
     if (!user?.roll_no || !user?.name) {
       setToastData({
         show: true,

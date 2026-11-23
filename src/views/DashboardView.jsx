@@ -88,29 +88,36 @@ export default function DashboardView({ onNavigate, onSignOut, user }) {
         : 'Plenty of room';
 
   useEffect(() => {
+    let isCurrent = true;
     const getBookedSeat = async () => {
       if (!userIdentifier) {
         return;
       }
       if (!localStorage.getItem('token')) {
-        setActiveBooking(null);
+        if (isCurrent) setActiveBooking(null);
         return;
       }
       try {
         const response = await api.get(`${API_URL}/getBookedSeat`);
-        const booking = response.data.bookings?.find((item) =>
+        if (!isCurrent) return;
+        const bookings = Array.isArray(response.data.bookings) ? response.data.bookings : [];
+        const eligible = bookings.filter((item) =>
           ['CONFIRMED', 'CHECKED_IN'].includes(String(item.status).toUpperCase()) && !item.check_out_time
         );
-        setActiveBooking(
-          booking ? normalizeStudentBooking(booking) : null
-        );
+        const booking = eligible.find((item) => String(item.status).toUpperCase() === 'CHECKED_IN') || eligible[0];
+        setActiveBooking(booking ? normalizeStudentBooking(booking) : null);
 
       } catch (error) {
-        console.error('Failed to load booked seat:', error.response?.data || error.message);
+        if (isCurrent) console.error('Failed to load booked seat:', error.response?.data || error.message);
       }
     };
 
     getBookedSeat();
+    const interval = window.setInterval(getBookedSeat, 20_000);
+    return () => {
+      isCurrent = false;
+      window.clearInterval(interval);
+    };
   }, [userIdentifier]);
 
   useEffect(() => {
