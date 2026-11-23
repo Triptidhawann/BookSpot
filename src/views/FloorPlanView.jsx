@@ -84,7 +84,7 @@ export default function FloorPlanView({ onNavigate, onSignOut, onBookingConfirme
   const handleConfirmReservation = async (bookingDetails) => {
     const savedUser = localStorage.getItem('bookspot_user');
     const user = savedUser ? JSON.parse(savedUser) : null;
-
+  
     if (!user?.roll_no || !user?.name) {
       setToastData({
         show: true,
@@ -104,11 +104,16 @@ export default function FloorPlanView({ onNavigate, onSignOut, onBookingConfirme
         duration: bookingDetails.duration,
         status: 'CONFIRMED'
       });
+      
+      if(response.data.msg = "Invalid token"){
+        navigate("/login")
+      }
 
       if (!response.data.status) {
         throw new Error(response.data.msg || 'Unable to reserve seat');
        
       }
+     
 
       setIsModalOpen(false);
       setMyBookedSeatIds((prev) => [...new Set([...prev, bookingDetails.seatNo])]);
@@ -131,7 +136,7 @@ export default function FloorPlanView({ onNavigate, onSignOut, onBookingConfirme
         title: 'Booking failed',
         subtitle: error.response?.data?.msg || error.message || 'Unable to reserve this seat.'
       });
-       navigate("/login")
+      
     } finally {
       setIsBooking(false);
     }

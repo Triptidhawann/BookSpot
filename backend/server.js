@@ -135,7 +135,7 @@ const handleLogin = async (req, res) => {
         const token = jwt.sign(
             { id: rollNo, role: "student" },
             jwtSecret,
-            { expiresIn: process.env.JWT_EXPIRES_IN || "8h" }
+            { expiresIn: process.env.JWT_EXPIRES_IN || "5m" }
         );
         return res.json({
             status: true,
@@ -147,6 +147,22 @@ const handleLogin = async (req, res) => {
 };
 
 app.post("/login", handleLogin);
+
+app.get("/session", auth, requireStudent, async (req, res) => {
+    try {
+        const [students] = await mysql.promise().query(
+            "SELECT roll_no, name FROM students WHERE roll_no = ?",
+            [req.user.id]
+        );
+        if (students.length === 0) {
+            return res.status(401).json({ status: false, msg: "Student account was not found" });
+        }
+        return res.json({ status: true, user: students[0] });
+    } catch (err) {
+        console.error("Session validation failed:", err.message);
+        return res.status(500).json({ status: false, msg: "Unable to validate session" });
+    }
+});
 
 app.post("/admin/login", (req, res) => {
     const { username, password } = req.body || {};
@@ -361,6 +377,29 @@ try {
 }
     
 })
+
+app.get("/booking-history", auth, requireStudent, async (req, res) => {
+    try {
+        const [bookings] = await mysql.promise().query(
+            `SELECT booking_id, seatNo, student_id, name,
+                    DATE_FORMAT(start_time, '%Y-%m-%d %H:%i:%s') AS start_time,
+                    DATE_FORMAT(end_time, '%Y-%m-%d %H:%i:%s') AS end_time,
+                    status,
+                    DATE_FORMAT(token_expires_at, '%Y-%m-%d %H:%i:%s') AS token_expires_at,
+                    DATE_FORMAT(check_in_time, '%Y-%m-%d %H:%i:%s') AS check_in_time,
+                    DATE_FORMAT(check_out_time, '%Y-%m-%d %H:%i:%s') AS check_out_time,
+                    DATE_FORMAT(created_at, '%Y-%m-%d %H:%i:%s') AS created_at
+             FROM bookings
+             WHERE student_id = ?
+             ORDER BY created_at DESC, booking_id DESC`,
+            [req.user.id]
+        );
+        return res.json({ status: true, bookings });
+    } catch (err) {
+        console.error("Booking history lookup failed:", err.message);
+        return res.status(500).json({ status: false, msg: "Unable to load booking history" });
+    }
+});
 
 async function cleanupExpiredBookings(db) {
     try {

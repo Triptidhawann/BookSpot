@@ -2,10 +2,10 @@ import React from 'react';
 import Navbar from '../components/Navbar';
 import heroIllustration from '../assets/hero_illustration.jpg';
 
-export default function LandingView({ onNavigate, onSelectSeatAndBook }) {
+export default function LandingView({ onNavigate, onSelectSeatAndBook, user, authLoading, onSignOut }) {
   return (
     <div style={{ width: '100%', minHeight: '100vh', backgroundColor: 'var(--surface)', display: 'flex', flexDirection: 'column' }}>
-      <Navbar onNavigate={onNavigate} />
+      <Navbar onNavigate={onNavigate} user={user} authLoading={authLoading} onSignOut={onSignOut} />
 
       <main style={{ width: '100%', display: 'flex', flexDirection: 'column' }}>
         {/* HERO SECTION */}

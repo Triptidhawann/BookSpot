@@ -10,7 +10,7 @@ export default function Sidebar({
   const navItems = [
     { id: 'dashboard', label: 'Dashboard', icon: 'home' },
     { id: 'book-a-seat', label: 'Book a Seat', icon: 'chair' },
-    { id: 'my-bookings', label: 'My Bookings', icon: 'bookmark' },
+    // { id: 'my-bookings', label: 'My Bookings', icon: 'bookmark' },
     { id: 'booking-history', label: 'Booking History', icon: 'history' },
     { id: 'profile', label: 'Profile', icon: 'person' },
   ];
@@ -200,34 +200,6 @@ export default function Sidebar({
               </span>
             </div>
           </div>
-
-          {/* Admin Portal shortcut */}
-          <button
-            type="button"
-            onClick={() => {
-              onNavigate('admin-login');
-              if (onCloseMobile) onCloseMobile();
-            }}
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: 'var(--space-md)',
-              padding: '10px var(--space-md)',
-              borderRadius: 'var(--radius-default)',
-              border: 'none',
-              cursor: 'pointer',
-              width: '100%',
-              backgroundColor: 'rgba(139, 72, 79, 0.08)',
-              color: 'var(--primary)',
-              fontFamily: 'inherit',
-              fontSize: '14px',
-              fontWeight: 600,
-              marginBottom: '6px'
-            }}
-          >
-            <span className="material-symbols-outlined" style={{ fontSize: '20px' }}>admin_panel_settings</span>
-            <span>Admin Console</span>
-          </button>
 
           {/* Sign Out */}
           <button

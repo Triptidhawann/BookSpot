@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 
-export default function Navbar({ onNavigate }) {
+export default function Navbar({ onNavigate, user, authLoading, onSignOut }) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const handleLinkClick = (e, sectionId) => {
@@ -197,64 +197,27 @@ export default function Navbar({ onNavigate }) {
           </div>
 
           {/* Right Action Cluster */}
-          <button
-            type="button"
-            onClick={() => onNavigate('admin-login')}
-            style={{
-              border: '1px solid rgba(139, 72, 79, 0.25)',
-              backgroundColor: 'rgba(139, 72, 79, 0.08)',
-              color: 'var(--primary)',
-              padding: '6px 12px',
-              borderRadius: '8px',
-              fontSize: '13px',
-              fontWeight: 600,
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '4px'
-            }}
-            title="Admin Portal"
-          >
-            <span className="material-symbols-outlined" style={{ fontSize: '16px' }}>admin_panel_settings</span>
-            <span>Admin</span>
-          </button>
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <button
-              type="button"
-              onClick={() => onNavigate('signin')}
-              style={{
-                border: 'none',
-                background: 'transparent',
-                color: 'var(--on-surface-variant)',
-                padding: '6px 12px',
-                fontSize: '14px',
-                fontWeight: 500,
-                cursor: 'pointer',
-                transition: 'color 0.15s ease'
-              }}
-              onMouseEnter={(e) => (e.currentTarget.style.color = 'var(--primary)')}
-              onMouseLeave={(e) => (e.currentTarget.style.color = 'var(--on-surface-variant)')}
-            >
-              Sign In
-            </button>
-
-            <button
-              type="button"
-              onClick={() => onNavigate('dashboard')}
-              style={{
-                border: 'none',
-                background: 'transparent',
-                color: 'var(--on-surface-variant)',
-                padding: '6px 12px',
-                fontSize: '14px',
-                fontWeight: 500,
-                cursor: 'pointer'
-              }}
-              onMouseEnter={(e) => (e.currentTarget.style.color = 'var(--primary)')}
-              onMouseLeave={(e) => (e.currentTarget.style.color = 'var(--on-surface-variant)')}
-            >
-              Student Portal
-            </button>
+            {!authLoading && (user ? (
+              <>
+                <span style={{ display: 'flex', alignItems: 'center', gap: '7px', padding: '6px 10px', color: 'var(--tertiary)', fontSize: '13px', fontWeight: 600 }}>
+                  <span aria-hidden="true" style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: 'var(--tertiary)' }} />
+                  Logged In
+                </span>
+                <button type="button" onClick={onSignOut} style={{ border: 'none', background: 'transparent', color: 'var(--on-surface-variant)', padding: '6px 10px', fontSize: '14px', fontWeight: 500, cursor: 'pointer' }}>
+                  Logout
+                </button>
+              </>
+            ) : (
+              <>
+                <button type="button" onClick={() => onNavigate('signin')} style={{ border: 'none', background: 'transparent', color: 'var(--on-surface-variant)', padding: '6px 10px', fontSize: '14px', fontWeight: 500, cursor: 'pointer' }}>
+                  Sign In
+                </button>
+                <button type="button" onClick={() => onNavigate('signup')} style={{ border: '1px solid rgba(139, 72, 79, 0.25)', borderRadius: '8px', background: 'var(--surface-container)', color: 'var(--primary)', padding: '6px 12px', fontSize: '14px', fontWeight: 600, cursor: 'pointer' }}>
+                  Sign Up
+                </button>
+              </>
+            ))}
 
             <button
               type="button"
@@ -331,48 +294,26 @@ export default function Navbar({ onNavigate }) {
             >
               Guidelines
             </a>
-            <div style={{ display: 'flex', gap: '10px', marginTop: '6px' }}>
-              <button
-                type="button"
-                onClick={() => {
-                  setMobileMenuOpen(false);
-                  onNavigate('signin');
-                }}
-                style={{
-                  flex: 1,
-                  padding: '8px 12px',
-                  borderRadius: 'var(--radius-default)',
-                  backgroundColor: 'var(--surface-container)',
-                  border: '1px solid rgba(216, 193, 194, 0.4)',
-                  color: 'var(--on-surface)',
-                  fontSize: '13px',
-                  fontWeight: 600,
-                  cursor: 'pointer'
-                }}
-              >
-                Sign In
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  setMobileMenuOpen(false);
-                  onNavigate('dashboard');
-                }}
-                style={{
-                  flex: 1,
-                  padding: '8px 12px',
-                  borderRadius: 'var(--radius-default)',
-                  backgroundColor: 'var(--surface-container-high)',
-                  border: 'none',
-                  color: 'var(--primary)',
-                  fontSize: '13px',
-                  fontWeight: 600,
-                  cursor: 'pointer'
-                }}
-              >
-                Student Portal
-              </button>
-            </div>
+            {!authLoading && (user ? (
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginTop: '6px' }}>
+                <span style={{ flex: 1, display: 'flex', alignItems: 'center', gap: '7px', color: 'var(--tertiary)', fontSize: '13px', fontWeight: 600 }}>
+                  <span aria-hidden="true" style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: 'var(--tertiary)' }} />
+                  Logged In
+                </span>
+                <button type="button" onClick={() => { setMobileMenuOpen(false); onSignOut(); }} style={{ flex: 1, padding: '8px 12px', borderRadius: 'var(--radius-default)', backgroundColor: 'var(--surface-container)', border: '1px solid rgba(216, 193, 194, 0.4)', color: 'var(--on-surface)', fontSize: '13px', fontWeight: 600, cursor: 'pointer' }}>
+                  Logout
+                </button>
+              </div>
+            ) : (
+              <div style={{ display: 'flex', gap: '10px', marginTop: '6px' }}>
+                <button type="button" onClick={() => { setMobileMenuOpen(false); onNavigate('signin'); }} style={{ flex: 1, padding: '8px 12px', borderRadius: 'var(--radius-default)', backgroundColor: 'var(--surface-container)', border: '1px solid rgba(216, 193, 194, 0.4)', color: 'var(--on-surface)', fontSize: '13px', fontWeight: 600, cursor: 'pointer' }}>
+                  Sign In
+                </button>
+                <button type="button" onClick={() => { setMobileMenuOpen(false); onNavigate('signup'); }} style={{ flex: 1, padding: '8px 12px', borderRadius: 'var(--radius-default)', backgroundColor: 'var(--surface-container-high)', border: 'none', color: 'var(--primary)', fontSize: '13px', fontWeight: 600, cursor: 'pointer' }}>
+                  Sign Up
+                </button>
+              </div>
+            ))}
             <button
               type="button"
               className="btn-primary"
