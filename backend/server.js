@@ -5,8 +5,20 @@ import bcrypt from "bcrypt";
 import cors from "cors";
 import crypto from "crypto";
 import generateBookingQR, { generateLibraryCheckInQR } from "./generateBookingQR.js";
+import auth, { getJwtSecret, requireAdmin, requireStudent } from "./auth.js";
+import jwt from "jsonwebtoken";
 
 dotenv.config({ path: new URL("./.env", import.meta.url) });
+const jwtSecret = getJwtSecret();
+if (process.env.NODE_ENV === "production" && (!process.env.JWT_SECRET || process.env.JWT_SECRET.length < 32)) {
+    throw new Error("Production requires a JWT_SECRET of at least 32 characters.");
+}
+if (process.env.NODE_ENV === "production" && (!process.env.ADMIN_USERNAME || !process.env.ADMIN_PASSWORD || process.env.ADMIN_PASSWORD.length < 16)) {
+    throw new Error("Production requires ADMIN_USERNAME and an ADMIN_PASSWORD of at least 16 characters.");
+}
+if (!jwtSecret) {
+    throw new Error("JWT_SECRET is required.");
+}
 const app = express();
 const config = process.env.DB_URL || process.env.MYSQL_URL;
 if (!config) {
@@ -120,31 +132,75 @@ const handleLogin = async (req, res) => {
         if (!passwordMatches) {
             return res.status(401).json({ status: false, msg: "Invalid password" });
         }
-
+        const token = jwt.sign(
+            { id: rollNo, role: "student" },
+            jwtSecret,
+            { expiresIn: process.env.JWT_EXPIRES_IN || "8h" }
+        );
         return res.json({
             status: true,
             msg: "Login successful",
-            user: { roll_no: user.roll_no, name: user.name }
+            user: { roll_no: user.roll_no, name: user.name },
+            token:token
         });
     });
 };
 
-app.get("/login", handleLogin);
 app.post("/login", handleLogin);
 
-app.post("/bookSeat", async (req, res) => {
+app.post("/admin/login", (req, res) => {
+    const { username, password } = req.body || {};
+    const expectedUsername = process.env.ADMIN_USERNAME;
+    const expectedPassword = process.env.ADMIN_PASSWORD;
+    if (!expectedUsername || !expectedPassword) {
+        return res.status(503).json({ status: false, msg: "Administrator login is not configured" });
+    }
+
+    const safeEqual = (provided, expected) => {
+        if (typeof provided !== "string") return false;
+        const providedBuffer = Buffer.from(provided);
+        const expectedBuffer = Buffer.from(expected);
+        return providedBuffer.length === expectedBuffer.length && crypto.timingSafeEqual(providedBuffer, expectedBuffer);
+    };
+
+    if (!safeEqual(username, expectedUsername) || !safeEqual(password, expectedPassword)) {
+        return res.status(401).json({ status: false, msg: "Invalid administrator credentials" });
+    }
+
+    const token = jwt.sign(
+        { id: expectedUsername, role: "admin" },
+        jwtSecret,
+        { expiresIn: process.env.JWT_EXPIRES_IN || "8h" }
+    );
+    return res.json({ status: true, msg: "Login successful", user: { username: expectedUsername, role: "admin" }, token });
+});
+
+app.post("/bookSeat",auth,requireStudent, async (req, res) => {
     const seatNo = req.body?.seatNo;
     const zone =req.body?.zone;
-    const rollNo = req.body?.roll;
-    const name =req.body?.name;
+    const rollNo = req.user?.id;
     const duration = req.body?.duration;
     const requestedStartTime = req.body?.startTime;
     const requestedEndTime = req.body?.endTime;
     const bookingStatus = "CONFIRMED";
     const seatStatus = "booked";
 
+    if (typeof rollNo !== "string" || !rollNo.trim()) {
+        return res.status(401).json({ status: false, msg: "Invalid authenticated user" });
+    }
+
+    let name;
     try {
         const db = mysql.promise();
+        const [students] = await db.query(
+            "SELECT name FROM students WHERE roll_no = ?",
+            [rollNo]
+        );
+        if (students.length === 0) {
+            return res.status(401).json({ status: false, msg: "Authenticated student was not found" });
+        }
+        name = students[0].name;
+
         const [rows] = await db.query(
             "SELECT booking_id FROM bookings WHERE student_id = ? AND status = ?",
             [rollNo, "CONFIRMED"]
@@ -160,7 +216,7 @@ app.post("/bookSeat", async (req, res) => {
         return res.status(500).json({ status: false, msg: "Unable to verify existing bookings" });
     }
 
-    if (!seatNo || !zone || !rollNo || !name || !Number.isFinite(duration) || duration <= 0) {
+    if (!seatNo || !zone || !Number.isFinite(duration) || duration <= 0) {
         return res.status(400).json({
             status: false,
             msg: "Seat, zone, student, and a valid duration are required"
@@ -248,33 +304,38 @@ app.get("/getSeatsData",(req,res)=>{
     });
 })
 
-app.get("/getStudentsData",(req,res)=>{
-    mysql.query("SELECT * FROM students", (err, result) => {
+app.get("/getStudentsData", auth, requireAdmin, (req,res)=>{
+    mysql.query("SELECT roll_no, name FROM students", (err, result) => {
         if (err) {
             return res.status(500).json({ error: err.message });
         }
-        console.log(result);
         res.json(result);
     });
 })
 
-app.get("/getBookingsData",(req,res)=>{
-    mysql.query("SELECT * FROM bookings", (err, result) => {
+app.get("/getBookingsData",auth,requireAdmin,(req,res)=>{
+    mysql.query(
+        `SELECT booking_id, seatNo, student_id, name, start_time, end_time, status,
+                token_expires_at, check_in_time, check_out_time, created_at
+         FROM bookings`,
+        (err, result) => {
         if (err) {
             return res.status(500).json({ error: err.message });
         }
-        console.log(result);
-        res.json(result);
-    });
+            res.json(result);
+        }
+    );
 })
 
-app.get("/getBookedSeat",(req,res)=>{
-    let {roll_no} = req.query;
+app.get("/getBookedSeat",auth,requireStudent,(req,res)=>{
+    const rollNo = req.user.id;
 
 try {
     mysql.query(
-        "SELECT * FROM bookings WHERE student_id = ? ORDER BY booking_id DESC",
-        [roll_no],
+        `SELECT booking_id, seatNo, student_id, name, start_time, end_time, status,
+                token_expires_at, check_in_time, check_out_time, created_at
+         FROM bookings WHERE student_id = ? ORDER BY booking_id DESC`,
+        [rollNo],
         (err, result) => {
             if (err) {
                 console.log(err);
@@ -355,7 +416,7 @@ async function cleanupExpiredBookings(db) {
     }
 }
 
-app.post("/cleanupExpiredBookings", async (_req, res) => {
+app.post("/cleanupExpiredBookings", auth, requireAdmin, async (_req, res) => {
     try {
         const releasedCount = await cleanupExpiredBookings(mysql.promise());
         return res.json({
@@ -371,11 +432,8 @@ app.post("/cleanupExpiredBookings", async (_req, res) => {
     }
 });
 
-app.post("/check-in", async (req, res) => {
-    const rollNo = String(req.body?.rollNo || req.body?.roll_no || req.query?.rollNo || req.query?.roll_no || "").trim();
-    if (!rollNo) {
-        return res.status(400).json({ status: false, msg: "Roll number is required" });
-    }
+app.post("/check-in", auth, requireStudent, async (req, res) => {
+    const rollNo = req.user.id;
 
     try {
         const db = mysql.promise();
@@ -438,7 +496,7 @@ app.post("/check-in", async (req, res) => {
     }
 });
 
-app.post("/check-out", async (req, res) => {
+app.post("/check-out", auth, requireStudent, async (req, res) => {
     const token = req.body?.token || req.query?.token;
     const bookingId = req.body?.bookingId || req.query?.bookingId;
 
@@ -453,13 +511,13 @@ app.post("/check-out", async (req, res) => {
 
         if (bookingId) {
             [rows] = await db.query(
-                "SELECT booking_id, seatNo, check_in_time, check_out_time FROM bookings WHERE booking_id = ?",
-                [bookingId]
+                "SELECT booking_id, seatNo, student_id, check_in_time, check_out_time FROM bookings WHERE booking_id = ? AND student_id = ?",
+                [bookingId, req.user.id]
             );
         } else {
             const tokenHash = crypto.createHash("sha256").update(token).digest("hex");
             [rows] = await db.query(
-                "SELECT booking_id, seatNo, check_in_time, check_out_time FROM bookings WHERE checkin_token_hash = ?",
+                "SELECT booking_id, seatNo, student_id, check_in_time, check_out_time FROM bookings WHERE checkin_token_hash = ?",
                 [tokenHash]
             );
         }
@@ -469,6 +527,9 @@ app.post("/check-out", async (req, res) => {
         }
 
         const booking = rows[0];
+        if (booking.student_id !== req.user.id) {
+            return res.status(403).json({ status: false, msg: "You cannot check out another student's booking" });
+        }
         if (booking.check_out_time) {
             return res.status(409).json({ status: false, msg: "Booking has already been checked out" });
         }
@@ -511,9 +572,9 @@ app.post("/check-out", async (req, res) => {
     }
 });
 
-app.post("/cancelBooking", async (req, res) => {
+app.post("/cancelBooking", auth, requireStudent, async (req, res) => {
     const bookingId = req.body?.bookingId;
-    const rollNo = req.body?.rollNo;
+    const rollNo = req.user.id;
 
     if (!bookingId || !rollNo) {
         return res.status(400).json({ status: false, msg: "Booking ID and student ID are required" });

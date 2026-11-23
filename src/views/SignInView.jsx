@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import signinIllustration from '../assets/signin_illustration.jpg';
-import axios from 'axios';
-import { API_URL } from '../utils/api';
+import { API_URL, api } from '../utils/api';
 
 export default function SignInView({ onNavigate, onAuthenticated }) {
   const [email, setEmail] = useState('');
@@ -28,14 +27,15 @@ export default function SignInView({ onNavigate, onAuthenticated }) {
     const rollToSubmit = email.trim();
 
     try {
-      const response = await axios.post(`${API_URL}/login`, {
+      const response = await api.post(`${API_URL}/login`, {
         roll_no: rollToSubmit,
         password
       });
 
       const data = response.data;
 
-      if (data.status) {
+      if (data.status && data.token) {
+        localStorage.setItem('token', data.token);
         setToastMessage(data.msg || 'Login successful! Redirecting to student dashboard...');
         // Store authenticated user session
         if (data.user) {
@@ -51,7 +51,7 @@ export default function SignInView({ onNavigate, onAuthenticated }) {
           onNavigate('dashboard');
         }, 1200);
       } else {
-        setErrorMessage(data.msg || 'Invalid roll number or password. Please try again.');
+        setErrorMessage(data.msg || 'Sign-in response did not include a valid session. Please try again.');
       }
     } catch (err) {
       console.error('Login error:', err);

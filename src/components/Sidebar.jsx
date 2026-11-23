@@ -3,6 +3,7 @@ import React from 'react';
 export default function Sidebar({
   activeView,
   onNavigate,
+  onSignOut,
   isMobileOpen,
   onCloseMobile
 }) {
@@ -232,7 +233,8 @@ export default function Sidebar({
           <button
             type="button"
             onClick={() => {
-              onNavigate('landing');
+              if (onSignOut) onSignOut();
+              else onNavigate('landing');
               if (onCloseMobile) onCloseMobile();
             }}
             style={{

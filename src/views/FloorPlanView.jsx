@@ -1,17 +1,17 @@
 import React, { useEffect, useState } from 'react';
-import axios from 'axios';
 import Sidebar from '../components/Sidebar';
 import Header from '../components/Header';
 import FloorPlanMap from '../components/FloorPlanMap';
 import FloatingBookingBar from '../components/FloatingBookingBar';
 import BookingModal from '../components/BookingModal';
 import Toast from '../components/Toast';
-import { API_URL } from '../utils/api';
+import { API_URL, api } from '../utils/api';
 import { campusStatus } from '../data/mockData';
 import { getAdminStore } from '../data/adminMockData';
+import { useNavigate } from 'react-router-dom';
 
 
-export default function FloorPlanView({ onNavigate, onBookingConfirmed, initialSelectedSeat }) {
+export default function FloorPlanView({ onNavigate, onSignOut, onBookingConfirmed, initialSelectedSeat }) {
   const [seats, setSeats] = useState(() => getAdminStore().seats);
   const [myBookedSeatIds, setMyBookedSeatIds] = useState([]);
   const [selectedSeat, setSelectedSeat] = useState(initialSelectedSeat || null);
@@ -25,11 +25,12 @@ export default function FloorPlanView({ onNavigate, onBookingConfirmed, initialS
   });
   const [searchQuery, setSearchQuery] = useState('');
   const [isBooking, setIsBooking] = useState(false);
+  const navigate = useNavigate();  
 
   useEffect(() => {
     const loadSeats = async () => {
       try {
-          const response = await axios.get(`${API_URL}/getSeatsData`);
+          const response = await api.get(`${API_URL}/getSeatsData`);
           if (Array.isArray(response.data) && response.data.length > 0) {
             setSeats(response.data);
           }
@@ -95,7 +96,7 @@ export default function FloorPlanView({ onNavigate, onBookingConfirmed, initialS
 
     setIsBooking(true);
     try {
-      const response = await axios.post(`${API_URL}/bookSeat`, {
+      const response = await api.post(`${API_URL}/bookSeat`, {
         seatNo: bookingDetails.seatNo,
         zone: bookingDetails.zone,
         roll: user.roll_no,
@@ -106,6 +107,7 @@ export default function FloorPlanView({ onNavigate, onBookingConfirmed, initialS
 
       if (!response.data.status) {
         throw new Error(response.data.msg || 'Unable to reserve seat');
+       
       }
 
       setIsModalOpen(false);
@@ -129,6 +131,7 @@ export default function FloorPlanView({ onNavigate, onBookingConfirmed, initialS
         title: 'Booking failed',
         subtitle: error.response?.data?.msg || error.message || 'Unable to reserve this seat.'
       });
+       navigate("/login")
     } finally {
       setIsBooking(false);
     }
@@ -149,6 +152,7 @@ export default function FloorPlanView({ onNavigate, onBookingConfirmed, initialS
       <Sidebar
         activeView="book-a-seat"
         onNavigate={onNavigate}
+        onSignOut={onSignOut}
         isMobileOpen={isMobileSidebarOpen}
         onCloseMobile={() => setIsMobileSidebarOpen(false)}
       />

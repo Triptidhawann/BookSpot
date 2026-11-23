@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
+import { Navigate, Route, Routes, useLocation, useNavigate } from 'react-router-dom';
 import LandingView from './views/LandingView';
 import FloorPlanView from './views/FloorPlanView';
 import DashboardView from './views/DashboardView';
@@ -9,106 +10,85 @@ import AdminDashboardView from './views/admin/AdminDashboardView';
 import CheckInView from './views/CheckInView';
 import './App.css';
 
-export default function App() {
-  const [isCheckInRoute, setIsCheckInRoute] = useState(() => window.location.pathname === '/check-in');
-  const [activeView, setActiveView] = useState('landing');
-  const [selectedSeatFromLanding, setSelectedSeatFromLanding] = useState(null);
-  const [loggedInUser, setLoggedInUser] = useState(() => {
-    try {
-      const savedUser = localStorage.getItem('bookspot_user');
-      return savedUser ? JSON.parse(savedUser) : null;
-    } catch {
-      return null;
-    }
-  });
+const viewPaths = {
+  landing: '/',
+  'book-a-seat': '/book-a-seat',
+  signin: '/signin',
+  login: '/signin',
+  signup: '/signup',
+  dashboard: '/dashboard',
+  'my-bookings': '/my-bookings',
+  'booking-history': '/booking-history',
+  profile: '/profile',
+  'admin-login': '/admin/login',
+  'admin-dashboard': '/admin/dashboard',
+  'check-in': '/check-in'
+};
 
-  const [adminUser, setAdminUser] = useState(() => {
-    try {
-      const savedAdmin = localStorage.getItem('bookspot_admin_session');
-      return savedAdmin ? JSON.parse(savedAdmin) : null;
-    } catch {
-      return null;
-    }
-  });
+function readSavedUser(key) {
+  try {
+    const savedUser = localStorage.getItem(key);
+    return savedUser ? JSON.parse(savedUser) : null;
+  } catch {
+    return null;
+  }
+}
+
+function AppRoutes() {
+  const navigate = useNavigate();
+  const location = useLocation();
+  const [selectedSeatFromLanding, setSelectedSeatFromLanding] = useState(null);
+  const [loggedInUser, setLoggedInUser] = useState(() => readSavedUser('bookspot_user'));
+  const [adminUser, setAdminUser] = useState(() => (
+    localStorage.getItem('bookspot_admin_token') ? readSavedUser('bookspot_admin_session') : null
+  ));
 
   const handleNavigate = (view) => {
-    if (isCheckInRoute) {
-      window.history.replaceState({}, '', '/');
-      setIsCheckInRoute(false);
-    }
-    setActiveView(view);
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    navigate(viewPaths[view] || '/');
+  };
+
+  const handleSignOut = () => {
+    localStorage.removeItem('token');
+    localStorage.removeItem('bookspot_user');
+    setLoggedInUser(null);
+    navigate('/');
   };
 
   const handleSelectSeatAndBook = (seat) => {
     setSelectedSeatFromLanding(seat);
-    setActiveView('book-a-seat');
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    navigate(viewPaths['book-a-seat']);
   };
+
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }, [location.pathname]);
 
   return (
     <div className="bookspot-app" style={{ minHeight: '100vh', width: '100%' }}>
-      {isCheckInRoute && (
-        <CheckInView onNavigate={handleNavigate} />
-      )}
-
-      {!isCheckInRoute && (
-        <>
-      {activeView === 'landing' && (
-        <LandingView
-          onNavigate={handleNavigate}
-          onSelectSeatAndBook={handleSelectSeatAndBook}
+      <Routes>
+        <Route path="/" element={<LandingView onNavigate={handleNavigate} onSelectSeatAndBook={handleSelectSeatAndBook} />} />
+        <Route path="/book-a-seat" element={<FloorPlanView onNavigate={handleNavigate} onSignOut={handleSignOut} initialSelectedSeat={selectedSeatFromLanding} />} />
+        <Route path="/signin" element={<SignInView onNavigate={handleNavigate} onAuthenticated={setLoggedInUser} />} />
+        <Route path="/login" element={<Navigate to="/signin" replace />} />
+        <Route path="/signup" element={<SignUpView onNavigate={handleNavigate} />} />
+        <Route path="/dashboard" element={<DashboardView onNavigate={handleNavigate} onSignOut={handleSignOut} user={loggedInUser} />} />
+        <Route path="/my-bookings" element={<DashboardView onNavigate={handleNavigate} onSignOut={handleSignOut} user={loggedInUser} />} />
+        <Route path="/booking-history" element={<DashboardView onNavigate={handleNavigate} onSignOut={handleSignOut} user={loggedInUser} />} />
+        <Route path="/profile" element={<DashboardView onNavigate={handleNavigate} onSignOut={handleSignOut} user={loggedInUser} />} />
+        <Route path="/admin/login" element={<AdminLoginView onNavigate={handleNavigate} onAdminAuthenticated={setAdminUser} />} />
+        <Route
+          path="/admin/dashboard"
+          element={adminUser
+            ? <AdminDashboardView onNavigate={handleNavigate} adminUser={adminUser} onAdminAuthenticated={setAdminUser} />
+            : <Navigate to="/admin/login" replace />}
         />
-      )}
-
-      {activeView === 'book-a-seat' && (
-        <FloorPlanView
-          onNavigate={handleNavigate}
-          initialSelectedSeat={selectedSeatFromLanding}
-        />
-      )}
-
-      {(activeView === 'signin' || activeView === 'login') && (
-        <SignInView
-          onNavigate={handleNavigate}
-          onAuthenticated={setLoggedInUser}
-        />
-      )}
-
-      {activeView === 'signup' && (
-        <SignUpView onNavigate={handleNavigate} />
-      )}
-
-      {(activeView === 'dashboard' ||
-        activeView === 'my-bookings' ||
-        activeView === 'booking-history' ||
-        activeView === 'profile') && (
-        <DashboardView onNavigate={handleNavigate} user={loggedInUser} />
-      )}
-
-      {/* Admin Portal Views */}
-      {activeView === 'admin-login' && (
-        <AdminLoginView
-          onNavigate={handleNavigate}
-          onAdminAuthenticated={setAdminUser}
-        />
-      )}
-
-      {activeView === 'admin-dashboard' && (
-        adminUser ? (
-          <AdminDashboardView
-            onNavigate={handleNavigate}
-            adminUser={adminUser}
-          />
-        ) : (
-          <AdminLoginView
-            onNavigate={handleNavigate}
-            onAdminAuthenticated={setAdminUser}
-          />
-        )
-      )}
-        </>
-      )}
+        <Route path="/check-in" element={<CheckInView onNavigate={handleNavigate} />} />
+        <Route path="*" element={<Navigate to="/" replace />} />
+      </Routes>
     </div>
   );
+}
+
+export default function App() {
+  return <AppRoutes />;
 }

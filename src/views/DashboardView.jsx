@@ -3,8 +3,7 @@ import Sidebar from '../components/Sidebar';
 import Header from '../components/Header';
 import ActiveBookingCard from '../components/ActiveBookingCard';
 import Toast from '../components/Toast';
-import axios from 'axios'
-import { API_URL } from '../utils/api';
+import { API_URL, api } from '../utils/api';
 import {
   currentUser,
   campusStatus,
@@ -45,7 +44,7 @@ const normalizeStudentBooking = (booking) => ({
   notes: booking.notes || ''
 });
 
-export default function DashboardView({ onNavigate, user }) {
+export default function DashboardView({ onNavigate, onSignOut, user }) {
   const dashboardUser = {
     ...currentUser,
     ...(user || {}),
@@ -65,9 +64,7 @@ export default function DashboardView({ onNavigate, user }) {
       }
 
       try {
-        const response = await axios.get(`${API_URL}/getBookedSeat`, {
-          params: { roll_no: user.roll_no }
-        });
+        const response = await api.get(`${API_URL}/getBookedSeat`);
         console.log('Booked seat response:', response.data);
         setActiveBooking(
           response.data.bookings?.[0]
@@ -104,9 +101,8 @@ export default function DashboardView({ onNavigate, user }) {
     if (!activeBooking?.booking_id && !activeBooking?.bookingId) return;
 
     try {
-      await axios.post(`${API_URL}/cancelBooking`, {
-        bookingId: activeBooking.booking_id || activeBooking.bookingId,
-        rollNo: user?.roll_no
+      await api.post(`${API_URL}/cancelBooking`, {
+        bookingId: activeBooking.booking_id || activeBooking.bookingId
       });
       setActiveBooking(null);
       showToast('Booking Released', `Seat ${activeBooking.seatNo} has been made available.`);
@@ -120,7 +116,7 @@ export default function DashboardView({ onNavigate, user }) {
     if (!bookingId) return;
 
     try {
-      const response = await axios.post(`${API_URL}/check-out`, { bookingId });
+      const response = await api.post(`${API_URL}/check-out`, { bookingId });
       setActiveBooking((previous) => ({
         ...previous,
         checkOutTime: response.data.checkOutTime,
@@ -138,6 +134,7 @@ export default function DashboardView({ onNavigate, user }) {
       <Sidebar
         activeView="dashboard"
         onNavigate={onNavigate}
+        onSignOut={onSignOut}
         isMobileOpen={isMobileSidebarOpen}
         onCloseMobile={() => setIsMobileSidebarOpen(false)}
       />

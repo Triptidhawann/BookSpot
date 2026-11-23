@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { API_URL, api } from '../../utils/api';
 
 export default function AdminLoginView({ onNavigate, onAdminAuthenticated }) {
   const [username, setUsername] = useState('');
@@ -7,42 +8,28 @@ export default function AdminLoginView({ onNavigate, onAdminAuthenticated }) {
   const [errorMessage, setErrorMessage] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
-  // Fixed admin credentials for authorized personnel
-  const VALID_ADMIN_USER = 'admin';
-  const VALID_ADMIN_PASS = 'Admin@12345';
-
-  const handleAdminLogin = (e) => {
+  const handleAdminLogin = async (e) => {
     e.preventDefault();
     setErrorMessage('');
-    setIsLoading(true);
-
     const trimmedUser = username.trim();
-
-    setTimeout(() => {
-      setIsLoading(false);
-      // Strictly verify credentials
-      if (trimmedUser === VALID_ADMIN_USER && password === VALID_ADMIN_PASS) {
-        const session = {
-          role: 'admin',
-          username: 'admin',
-          name: 'Chief Librarian / Administrator',
-          loggedInAt: new Date().toISOString()
-        };
-        localStorage.setItem('bookspot_admin_session', JSON.stringify(session));
-        if (onAdminAuthenticated) {
-          onAdminAuthenticated(session);
-        }
-        onNavigate('admin-dashboard');
-      } else {
-        setErrorMessage('Access Denied: Invalid Admin ID or Password. Only authorized library staff can log in.');
+    setIsLoading(true);
+    try {
+      const response = await api.post(`${API_URL}/admin/login`, { username: trimmedUser, password });
+      const { token, user } = response.data;
+      if (!response.data.status || !token || user?.role !== 'admin') {
+        throw new Error(response.data.msg || 'Invalid administrator sign-in response.');
       }
-    }, 600);
-  };
 
-  const handleQuickDemoFill = () => {
-    setUsername('admin');
-    setPassword('Admin@12345');
-    setErrorMessage('');
+      const session = { ...user, loggedInAt: new Date().toISOString() };
+      localStorage.setItem('bookspot_admin_token', token);
+      localStorage.setItem('bookspot_admin_session', JSON.stringify(session));
+      onAdminAuthenticated?.(session);
+      onNavigate('admin-dashboard');
+    } catch (error) {
+      setErrorMessage(error.response?.data?.msg || error.message || 'Unable to sign in as administrator.');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -363,41 +350,6 @@ export default function AdminLoginView({ onNavigate, onAdminAuthenticated }) {
             </button>
           </form>
 
-          {/* Quick Credential Helper Pill */}
-          <div
-            style={{
-              marginTop: '24px',
-              padding: '14px',
-              backgroundColor: 'rgba(255, 255, 255, 0.04)',
-              borderRadius: '12px',
-              border: '1px dashed rgba(216, 193, 194, 0.25)',
-              display: 'flex',
-              flexDirection: 'column',
-              gap: '6px'
-            }}
-          >
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-              <span style={{ fontSize: '12px', color: '#ffdadb', fontWeight: 600 }}>Default Admin Credentials:</span>
-              <button
-                type="button"
-                onClick={handleQuickDemoFill}
-                style={{
-                  background: 'none',
-                  border: 'none',
-                  color: '#ffb2b9',
-                  fontSize: '12px',
-                  fontWeight: 600,
-                  cursor: 'pointer',
-                  textDecoration: 'underline'
-                }}
-              >
-                Auto-fill
-              </button>
-            </div>
-            <div style={{ fontSize: '12px', color: '#baa9ab', fontFamily: 'monospace' }}>
-              ID: <span style={{ color: '#ffffff', fontWeight: 600 }}>admin</span> | Pass: <span style={{ color: '#ffffff', fontWeight: 600 }}>Admin@12345</span>
-            </div>
-          </div>
         </div>
       </main>
 
