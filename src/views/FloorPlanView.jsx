@@ -42,6 +42,29 @@ export default function FloorPlanView({ onNavigate, onSignOut, onBookingConfirme
     loadSeats();
   },[])
 
+  useEffect(() => {
+    let isCurrent = true;
+
+    const loadMyBookings = async () => {
+      if (!localStorage.getItem('token')) return;
+
+      try {
+        const response = await api.get(`${API_URL}/getBookedSeat`);
+        const activeSeatIds = (response.data.bookings || [])
+          .filter((booking) => ['CONFIRMED', 'CHECKED_IN'].includes(String(booking.status).toUpperCase()))
+          .map((booking) => booking.seatNo || booking.seat_no)
+          .filter(Boolean);
+
+        if (isCurrent) setMyBookedSeatIds(activeSeatIds);
+      } catch (error) {
+        console.error('Failed to load your bookings:', error.response?.data || error.message);
+      }
+    };
+
+    loadMyBookings();
+    return () => { isCurrent = false; };
+  }, []);
+
   const handleSelectSeat = (seat, isBookedByOther, isMyBooking) => {
     console.log(seat.seatNo);
     if (isMyBooking) {

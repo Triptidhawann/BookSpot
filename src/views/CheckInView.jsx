@@ -2,22 +2,22 @@ import React, { useState } from 'react';
 import { API_URL, api } from '../utils/api';
 
 export default function CheckInView({ onNavigate }) {
+  const [rollNo, setRollNo] = useState('');
   const [status, setStatus] = useState('idle');
-  const [message, setMessage] = useState('Sign in to check in to your reservation.');
+  const [message, setMessage] = useState('Enter the student’s roll number to check in their reservation.');
   const [details, setDetails] = useState(null);
 
   const handleCheckIn = async (event) => {
     event.preventDefault();
-    if (!localStorage.getItem('token')) {
+    if (!rollNo.trim()) {
       setStatus('error');
-      setMessage('Sign in with your student account before checking in.');
+      setMessage('Enter your roll number to continue.');
       return;
     }
-
     setStatus('loading');
-    setMessage('Verifying your reservation...');
+    setMessage('Checking in the student...');
     try {
-      const response = await api.post(`${API_URL}/check-in`, {});
+      const response = await api.post(`${API_URL}/check-in`, { rollNo: rollNo.trim() });
       setDetails(response.data);
       setStatus('success');
       setMessage(response.data.msg || 'Check-in successful');
@@ -44,19 +44,26 @@ export default function CheckInView({ onNavigate }) {
         )}
         {status === 'idle' || status === 'error' || status === 'loading' ? (
           <form onSubmit={handleCheckIn} style={{ marginTop: '20px', textAlign: 'left' }}>
+            <label className="body-sm" htmlFor="check-in-roll-no" style={{ display: 'block', marginBottom: '8px', color: 'var(--on-surface)' }}>
+              Student roll number
+            </label>
+            <input
+              id="check-in-roll-no"
+              value={rollNo}
+              onChange={(event) => setRollNo(event.target.value)}
+              placeholder="Enter your roll number"
+              autoComplete="username"
+              required
+              style={{ width: '100%', boxSizing: 'border-box', padding: '12px 14px', borderRadius: '12px', border: '1px solid var(--outline)', fontSize: '16px' }}
+            />
             <button type="submit" className="btn-primary" disabled={status === 'loading'} style={{ width: '100%', marginTop: '12px' }}>
-              {status === 'loading' ? 'Verifying...' : 'Check In'}
+              {status === 'loading' ? 'Checking in...' : 'Check In Student'}
             </button>
-            {!localStorage.getItem('token') && (
-              <button type="button" onClick={() => onNavigate('signin')} style={{ width: '100%', marginTop: '12px' }}>
-                Sign In
-              </button>
-            )}
           </form>
         ) : null}
         {status === 'success' && (
-          <button type="button" className="btn-primary" onClick={() => onNavigate('dashboard')} style={{ width: '100%', marginTop: '24px' }}>
-            Open My Dashboard
+          <button type="button" className="btn-primary" onClick={() => onNavigate('landing')} style={{ width: '100%', marginTop: '24px' }}>
+            Done
           </button>
         )}
       </section>

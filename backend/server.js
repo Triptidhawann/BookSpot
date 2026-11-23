@@ -471,8 +471,12 @@ app.post("/cleanupExpiredBookings", auth, requireAdmin, async (_req, res) => {
     }
 });
 
-app.post("/check-in", auth, requireStudent, async (req, res) => {
-    const rollNo = req.user.id;
+app.post("/check-in", async (req, res) => {
+    const submittedRollNo = typeof req.body?.rollNo === "string" ? req.body.rollNo.trim() : "";
+    if (!submittedRollNo) {
+        return res.status(400).json({ status: false, msg: "Roll number is required" });
+    }
+    const rollNo = submittedRollNo;
 
     try {
         const db = mysql.promise();
