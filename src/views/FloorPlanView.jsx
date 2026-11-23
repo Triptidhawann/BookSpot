@@ -19,6 +19,7 @@ export default function FloorPlanView({ onNavigate, onSignOut, onBookingConfirme
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
   const [toastData, setToastData] = useState({
+    status:true,
     show: false,
     title: '',
     subtitle: ''
@@ -77,7 +78,7 @@ export default function FloorPlanView({ onNavigate, onSignOut, onBookingConfirme
 
   const requireAuthentication = () => {
     if (authLoading) {
-      setToastData({ show: true, title: 'Checking your session', subtitle: 'Please wait a moment, then try booking again.' });
+      setToastData({ status: false, show: true, title: 'Checking your session', subtitle: 'Please wait a moment, then try booking again.' });
       return false;
     }
     if (!user) {
@@ -94,22 +95,22 @@ export default function FloorPlanView({ onNavigate, onSignOut, onBookingConfirme
     if (isMyBooking) {
       setSelectedSeat(seat);
       setToastData({
+        status: true,
         show: true,
         title: `Your Active Reservation: ${seat.seatNo} (Green)`,
         subtitle: `This seat is reserved by you. Check-in is active and confirmed.`
       });
-      setTimeout(() => setToastData((prev) => ({ ...prev, show: false })), 4000);
       return;
     }
 
     if (isBookedByOther) {
       setSelectedSeat(seat);
       setToastData({
+        status: false,
         show: true,
         title: `Seat ${seat.seatNo} is Booked (Grey)`,
         subtitle: `Occupied by another student. Turned darker grey on click. Please select an available white seat.`
       });
-      setTimeout(() => setToastData((prev) => ({ ...prev, show: false })), 4000);
       return;
     }
 
@@ -135,6 +136,7 @@ export default function FloorPlanView({ onNavigate, onSignOut, onBookingConfirme
     if (!requireAuthentication()) return;
     if (!user?.roll_no || !user?.name) {
       setToastData({
+        status: false,
         show: true,
         title: 'Sign in required',
         subtitle: 'Please sign in before reserving a seat.'
@@ -166,17 +168,16 @@ export default function FloorPlanView({ onNavigate, onSignOut, onBookingConfirme
         prev.map((s) => (s.seatNo === bookingDetails.seatNo ? { ...s, isBooked: 'booked' } : s))
       );
       setToastData({
+        status: true,
         show: true,
         title: `Seat ${bookingDetails.seatNo} Reserved`,
         subtitle: `Booked for ${bookingDetails.duration} hours in Zone ${bookingDetails.zone}.`
       });
       onBookingConfirmed?.(bookingDetails);
-      setTimeout(() => {
-        setToastData((prev) => ({ ...prev, show: false }));
-      }, 5000);
     } catch (error) {
       setIsModalOpen(false);
       setToastData({
+        status: false,
         show: true,
         title: 'Booking failed',
         subtitle: error.response?.data?.msg || error.message || 'Unable to reserve this seat.'
@@ -214,6 +215,7 @@ export default function FloorPlanView({ onNavigate, onSignOut, onBookingConfirme
           searchQuery={searchQuery}
           onSearchChange={handleSearch}
           onNavigate={onNavigate}
+          user={user}
         />
 
         {/* Content Body */}
@@ -357,6 +359,7 @@ export default function FloorPlanView({ onNavigate, onSignOut, onBookingConfirme
         show={toastData.show}
         title={toastData.title}
         subtitle={toastData.subtitle}
+        status={toastData.status}
         onClose={() => setToastData((prev) => ({ ...prev, show: false }))}
       />
     </div>

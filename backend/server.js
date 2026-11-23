@@ -426,6 +426,40 @@ app.get("/booking-history", auth, requireStudent, async (req, res) => {
     }
 });
 
+app.post("/extend-booking", auth, requireStudent, async (req, res) => {
+    const bookingId = req.body?.bookingId;
+    if (!/^\d+$/.test(String(bookingId || ""))) {
+        return res.status(400).json({ status: false, msg: "A valid booking ID is required" });
+    }
+
+    try {
+        const db = mysql.promise();
+        const [result] = await db.execute(
+            `UPDATE bookings
+             SET end_time = DATE_ADD(end_time, INTERVAL 1 HOUR)
+             WHERE booking_id = ?
+               AND student_id = ?
+               AND check_out_time IS NULL`,
+            [bookingId, req.user.id]
+        );
+        if (result.affectedRows !== 1) {
+            return res.status(409).json({ status: false, msg: "This booking can no longer be extended" });
+        }
+
+        const [rows] = await db.execute(
+            `SELECT DATE_FORMAT(end_time, '%Y-%m-%d %H:%i:%s') AS end_time,
+                    ROUND(TIMESTAMPDIFF(SECOND, start_time, end_time) / 3600, 2) AS duration_hours
+             FROM bookings
+             WHERE booking_id = ? AND student_id = ?`,
+            [bookingId, req.user.id]
+        );
+        return res.json({ status: true, msg: "Booking extended by one hour", booking: rows[0] });
+    } catch (err) {
+        console.error("Booking extension failed:", err.message);
+        return res.status(500).json({ status: false, msg: "Unable to extend this booking" });
+    }
+});
+
 app.get("/study-activity", auth, requireStudent, async (req, res) => {
     const year = Number(req.query.year);
     const currentYear = new Date(Date.now() + 330 * 60 * 1000).getUTCFullYear();

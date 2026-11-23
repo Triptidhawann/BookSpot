@@ -2,7 +2,6 @@ import React from 'react';
 
 export default function ActiveBookingCard({
   booking,
-  onExtendTime,
   onViewOnMap,
   onCancelBooking,
   onCheckOut
@@ -106,16 +105,6 @@ export default function ActiveBookingCard({
             borderTop: '1px solid rgba(216, 193, 194, 0.2)'
           }}
         >
-          <button
-            type="button"
-            className="btn-primary"
-            onClick={onExtendTime}
-            style={{ padding: '10px 18px', fontSize: '14px' }}
-          >
-            <span className="material-symbols-outlined" style={{ fontSize: '18px' }}>more_time</span>
-            <span>Extend Time (+1 hr)</span>
-          </button>
-
           <button
             type="button"
             className="btn-secondary"

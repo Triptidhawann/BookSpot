@@ -154,22 +154,8 @@ export default function DashboardView({ onNavigate, onSignOut, user }) {
       });
     return () => { isCurrent = false; };
   }, [userIdentifier]);
-  const showToast = (title, subtitle) => {
-    setToastData({ show: true, title, subtitle });
-    setTimeout(() => {
-      setToastData((prev) => ({ ...prev, show: false }));
-    }, 4000);
-  };
-
-  const handleExtendTime = () => {
-    if (!activeBooking) return;
-    setActiveBooking((prev) => ({
-      ...prev,
-      durationHours: prev.durationHours + 1,
-      endTime: '2:30 PM',
-      timeLeft: '2h 45m left'
-    }));
-    showToast('Reservation Extended', 'Added +1 hour to your session at Seat C04.');
+  const showToast = (title, subtitle, status = true) => {
+    setToastData({ show: true, title, subtitle, status });
   };
 
   const handleCancelBooking = async () => {
@@ -182,7 +168,7 @@ export default function DashboardView({ onNavigate, onSignOut, user }) {
       setActiveBooking(null);
       showToast('Booking Released', `Seat ${activeBooking.seatNo} has been made available.`);
     } catch (error) {
-      showToast('Unable to cancel', error.response?.data?.msg || error.message);
+      showToast('Unable to cancel', error.response?.data?.msg || error.message, false);
     }
   };
 
@@ -199,7 +185,7 @@ export default function DashboardView({ onNavigate, onSignOut, user }) {
       }));
       showToast('Check-out successful', `Seat ${activeBooking.seatNo} has been released.`);
     } catch (error) {
-      showToast('Check-out unavailable', error.response?.data?.msg || error.message);
+      showToast('Check-out unavailable', error.response?.data?.msg || error.message, false);
     }
   };
 
@@ -550,7 +536,6 @@ export default function DashboardView({ onNavigate, onSignOut, user }) {
             {activeBooking && (
               <ActiveBookingCard
                 booking={activeBooking}
-                onExtendTime={handleExtendTime}
                 onViewOnMap={() => onNavigate('book-a-seat')}
                 onCancelBooking={handleCancelBooking}
                 onCheckOut={handleCheckOut}
@@ -635,6 +620,7 @@ export default function DashboardView({ onNavigate, onSignOut, user }) {
         show={toastData.show}
         title={toastData.title}
         subtitle={toastData.subtitle}
+        status={toastData.status}
         onClose={() => setToastData((prev) => ({ ...prev, show: false }))}
       />
     </div>

@@ -14,56 +14,6 @@ export default function Navbar({ onNavigate, user, authLoading, onSignOut }) {
 
   return (
     <div style={{ width: '100%', position: 'sticky', top: 0, zIndex: 40 }}>
-      {/* Top Notification / Live Campus Ticker */}
-      <aside
-        aria-label="Campus Library Status"
-        style={{
-          width: '100%',
-          backgroundColor: 'var(--surface-container-high)',
-          padding: '8px var(--margin)',
-          color: 'var(--on-surface-variant)',
-          fontSize: '12px',
-          fontWeight: 500,
-          borderBottom: '1px solid rgba(216, 193, 194, 0.2)'
-        }}
-      >
-        <div
-          style={{
-            maxWidth: '1280px',
-            margin: '0 auto',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            gap: '8px',
-            flexWrap: 'wrap'
-          }}
-        >
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <span
-              style={{
-                width: '8px',
-                height: '8px',
-                borderRadius: '50%',
-                backgroundColor: 'var(--tertiary)',
-                display: 'inline-block'
-              }}
-              className="animate-pulse-slow"
-            />
-            <span className="headline-sm" style={{ color: 'var(--on-surface)', fontSize: '13px', fontWeight: 600 }}>
-              Main Campus Central Library
-            </span>
-            <span style={{ color: 'var(--outline-variant)' }}>•</span>
-            <span>Level 2 Silent Reading & Research Floor Active</span>
-            <span className="desktop-only" style={{ color: 'var(--outline-variant)' }}>•</span>
-            <span className="desktop-only">Operating Hours: 08:00 – 22:00</span>
-          </div>
-
-          <div className="desktop-only" style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-            <span style={{ color: 'var(--tertiary)', fontWeight: 600 }}>68 seats available</span>
-          </div>
-        </div>
-      </aside>
-
       {/* Main Navigation Header */}
       <header
         style={{
