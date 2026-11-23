@@ -64,7 +64,9 @@ export default function DashboardView({ onNavigate, onSignOut, user }) {
       }
 
       try {
-        const response = await api.get(`${API_URL}/getBookedSeat`);
+        const response = await api.get(`${API_URL}/getBookedSeat`,
+          {headers:{authorization:`Bearer ${token}`}}
+        );
         console.log('Booked seat response:', response.data);
         setActiveBooking(
           response.data.bookings?.[0]
