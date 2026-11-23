@@ -182,7 +182,7 @@ function AppRoutes() {
             ? <AdminDashboardView onNavigate={handleNavigate} adminUser={adminUser} onAdminAuthenticated={setAdminUser} />
             : <Navigate to="/admin" replace />}
         />
-        <Route path="/check-in" element={<CheckInView onNavigate={handleNavigate} />} />
+        <Route path="/check-in" element={<CheckInView />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </div>

@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { API_URL, api } from '../utils/api';
 
-export default function CheckInView({ onNavigate }) {
+export default function CheckInView() {
   const [rollNo, setRollNo] = useState('');
   const [status, setStatus] = useState('idle');
   const [message, setMessage] = useState('Enter the student’s roll number to check in their reservation.');
@@ -21,6 +21,7 @@ export default function CheckInView({ onNavigate }) {
       setDetails(response.data);
       setStatus('success');
       setMessage(response.data.msg || 'Check-in successful');
+      setRollNo('');
     } catch (error) {
       setStatus('error');
       setMessage(error.response?.data?.msg || 'Unable to complete check-in.');
@@ -42,7 +43,7 @@ export default function CheckInView({ onNavigate }) {
         {details?.seatNo && (
           <p className="label-lg" style={{ marginTop: '16px', color: 'var(--primary)' }}>Seat {details.seatNo}</p>
         )}
-        {status === 'idle' || status === 'error' || status === 'loading' ? (
+        {status === 'idle' || status === 'error' || status === 'loading' || status === 'success' ? (
           <form onSubmit={handleCheckIn} style={{ marginTop: '20px', textAlign: 'left' }}>
             <label className="body-sm" htmlFor="check-in-roll-no" style={{ display: 'block', marginBottom: '8px', color: 'var(--on-surface)' }}>
               Student roll number
@@ -50,22 +51,26 @@ export default function CheckInView({ onNavigate }) {
             <input
               id="check-in-roll-no"
               value={rollNo}
-              onChange={(event) => setRollNo(event.target.value)}
-              placeholder="Enter your roll number"
-              autoComplete="username"
+              onChange={(event) => {
+                setRollNo(event.target.value);
+                if (status === 'success') {
+                  setStatus('idle');
+                  setMessage('Enter the student’s roll number to check in their reservation.');
+                  setDetails(null);
+                }
+              }}
+              placeholder="Enter student roll number"
+              autoComplete="off"
               required
+              disabled={status === 'loading'}
+              autoFocus
               style={{ width: '100%', boxSizing: 'border-box', padding: '12px 14px', borderRadius: '12px', border: '1px solid var(--outline)', fontSize: '16px' }}
             />
             <button type="submit" className="btn-primary" disabled={status === 'loading'} style={{ width: '100%', marginTop: '12px' }}>
-              {status === 'loading' ? 'Checking in...' : 'Check In Student'}
+              {status === 'loading' ? 'Checking in...' : status === 'success' ? 'Check In Another Student' : 'Check In Student'}
             </button>
           </form>
         ) : null}
-        {status === 'success' && (
-          <button type="button" className="btn-primary" onClick={() => onNavigate('landing')} style={{ width: '100%', marginTop: '24px' }}>
-            Done
-          </button>
-        )}
       </section>
     </main>
   );
