@@ -1,4 +1,4 @@
-import React, { useState,useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import Sidebar from '../components/Sidebar';
 import Header from '../components/Header';
 import ActiveBookingCard from '../components/ActiveBookingCard';
@@ -6,11 +6,26 @@ import Toast from '../components/Toast';
 import { API_URL, api } from '../utils/api';
 import {
   currentUser,
-  campusStatus,
-  activeBooking as initialActiveBooking,
-  upcomingBookings as initialUpcoming,
-  studyHistory
+  campusStatus
 } from '../data/mockData';
+// const date = new Date(Date.now());
+
+const maxStreakFromDates = (dates) => {
+  const activityDates = Array.isArray(dates) ? dates : [];
+  const ordinals = [...new Set(activityDates.map((date) => String(date).slice(0, 10)))]
+    .map((date) => Date.parse(`${date}T00:00:00Z`) / 86400000)
+    .filter(Number.isFinite)
+    .sort((left, right) => left - right);
+  let longest = 0;
+  let current = 0;
+  let previous = null;
+  for (const ordinal of ordinals) {
+    current = previous !== null && ordinal === previous + 1 ? current + 1 : 1;
+    longest = Math.max(longest, current);
+    previous = ordinal;
+  }
+  return longest;
+};
 
 const formatBookingTime = (value) => {
   if (!value) return '';
@@ -45,21 +60,36 @@ const normalizeStudentBooking = (booking) => ({
 });
 
 export default function DashboardView({ onNavigate, onSignOut, user }) {
+  const userIdentifier = user?.roll_no || user?.rollNo || '';
+  const actualEmail = user?.email || (String(userIdentifier).includes('@') ? userIdentifier : '');
   const dashboardUser = {
     ...currentUser,
     ...(user || {}),
-    rollNo: user?.roll_no || currentUser.rollNo,
-    role: user ? 'Student' : currentUser.role,
-    semester: user ? 'BookSpot Student' : currentUser.semester
+    name: user?.name || 'Student',
+    email: actualEmail,
+    rollNo: userIdentifier,
+    role: 'Student',
+    semester: 'BookSpot Student'
   };
-  const [activeBooking, setActiveBooking] = useState(initialActiveBooking);
-  const [upcoming, setUpcoming] = useState(initialUpcoming);
+  const [activeBooking, setActiveBooking] = useState(null);
+  const [seatSummary, setSeatSummary] = useState({ total: 0, booked: 0 });
+  const [isSeatSummaryLoading, setIsSeatSummaryLoading] = useState(true);
+  const [maxStreak, setMaxStreak] = useState(0);
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
   const [toastData, setToastData] = useState({ show: false, title: '', subtitle: '' });
+  const availableSeats = Math.max(0, seatSummary.total - seatSummary.booked);
+  const occupancyPercent = seatSummary.total ? Math.round((seatSummary.booked / seatSummary.total) * 100) : 0;
+  const capacityLabel = !seatSummary.total
+    ? 'Capacity unavailable'
+    : availableSeats === 0
+      ? 'Library is full'
+      : availableSeats <= Math.ceil(seatSummary.total * 0.2)
+        ? 'Limited availability'
+        : 'Plenty of room';
 
   useEffect(() => {
     const getBookedSeat = async () => {
-      if (!user?.roll_no) {
+      if (!userIdentifier) {
         return;
       }
       if (!localStorage.getItem('token')) {
@@ -68,11 +98,11 @@ export default function DashboardView({ onNavigate, onSignOut, user }) {
       }
       try {
         const response = await api.get(`${API_URL}/getBookedSeat`);
-        console.log('Booked seat response:', response.data);
+        const booking = response.data.bookings?.find((item) =>
+          ['CONFIRMED', 'CHECKED_IN'].includes(String(item.status).toUpperCase()) && !item.check_out_time
+        );
         setActiveBooking(
-          response.data.bookings?.[0]
-            ? normalizeStudentBooking(response.data.bookings[0])
-            : null
+          booking ? normalizeStudentBooking(booking) : null
         );
 
       } catch (error) {
@@ -81,7 +111,42 @@ export default function DashboardView({ onNavigate, onSignOut, user }) {
     };
 
     getBookedSeat();
-  }, [user?.roll_no]);
+  }, [userIdentifier]);
+
+  useEffect(() => {
+    let isCurrent = true;
+    const loadSeatSummary = async () => {
+      try {
+        const { data } = await api.get(`${API_URL}/getSeatsData`);
+        if (!isCurrent || !Array.isArray(data)) return;
+        const booked = data.filter((seat) => String(seat.isBooked || '').trim().toLowerCase() === 'booked').length;
+        setSeatSummary({ total: data.length, booked });
+      } catch (error) {
+        if (isCurrent) console.error('Failed to load library capacity:', error.response?.data || error.message);
+      } finally {
+        if (isCurrent) setIsSeatSummaryLoading(false);
+      }
+    };
+
+    loadSeatSummary();
+    const interval = window.setInterval(loadSeatSummary, 30_000);
+    return () => {
+      isCurrent = false;
+      window.clearInterval(interval);
+    };
+  }, []);
+
+  useEffect(() => {
+    let isCurrent = true;
+    api.get(`${API_URL}/study-statistics`)
+      .then(({ data }) => {
+        if (isCurrent) setMaxStreak(maxStreakFromDates(data?.statistics?.activity_dates || []));
+      })
+      .catch((error) => {
+        if (isCurrent) console.error('Failed to load study streak:', error.response?.data || error.message);
+      });
+    return () => { isCurrent = false; };
+  }, [userIdentifier]);
   const showToast = (title, subtitle) => {
     setToastData({ show: true, title, subtitle });
     setTimeout(() => {
@@ -177,10 +242,10 @@ export default function DashboardView({ onNavigate, onSignOut, user }) {
                 </div>
 
                 <h1 className="headline-xl" style={{ color: 'var(--on-surface)', letterSpacing: '-0.02em', fontWeight: 700 }}>
-                  Good morning, {dashboardUser.name.split(' ')[0]}!
+                  Heyy, {dashboardUser.name.split(' ')[0]}!
                 </h1>
                 <p className="body-md" style={{ color: 'var(--on-surface-variant)', marginTop: '4px' }}>
-                  Central University Library • Main Campus • Academic Year 2026–27
+                  Chitkara University Library • Academic Year 2026–27
                 </p>
               </div>
 
@@ -213,11 +278,11 @@ export default function DashboardView({ onNavigate, onSignOut, user }) {
                 </div>
                 <div>
                   <div className="headline-sm" style={{ color: 'var(--on-surface)', fontWeight: 600, fontSize: '15px' }}>
-                    Thursday, Oct 24, 2024
+                   Library Hours
                   </div>
                   <div className="label-sm" style={{ color: 'var(--on-surface-variant)', display: 'flex', alignItems: 'center', gap: '4px', marginTop: '2px' }}>
                     <span className="material-symbols-outlined" style={{ fontSize: '14px', color: 'var(--tertiary)' }}>schedule</span>
-                    <span>Library Hours: {campusStatus.hours}</span>
+                    <span>: {campusStatus.hours}</span>
                   </div>
                 </div>
               </div>
@@ -265,10 +330,11 @@ export default function DashboardView({ onNavigate, onSignOut, user }) {
                 </div>
               </div>
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: '18px', color: 'var(--on-surface-variant)', fontSize: '12px' }}>
-                <span><strong style={{ color: 'var(--on-surface)' }}>Campus ID:</strong> {dashboardUser.rollNo}</span>
+                <span><strong style={{ color: 'var(--on-surface)' }}>{String(dashboardUser.rollNo).includes('@') ? 'Account ID:' : 'Campus ID:'}</strong> {dashboardUser.rollNo}</span>
                 {dashboardUser.email && (
                   <span><strong style={{ color: 'var(--on-surface)' }}>Email:</strong> {dashboardUser.email}</span>
                 )}
+               
               </div>
             </section>
 
@@ -315,10 +381,10 @@ export default function DashboardView({ onNavigate, onSignOut, user }) {
                 <div style={{ margin: '10px 0' }}>
                   <div style={{ display: 'flex', alignItems: 'baseline', gap: '6px' }}>
                     <span className="headline-xl" style={{ fontSize: '42px', lineHeight: 1.05, fontWeight: 700, color: 'var(--on-surface)' }}>
-                      {campusStatus.availableSeats}
+                      {isSeatSummaryLoading ? '…' : availableSeats}
                     </span>
                     <span className="body-md" style={{ color: 'var(--on-surface-variant)' }}>
-                      / {campusStatus.totalSeats} seats open
+                      / {isSeatSummaryLoading ? '—' : seatSummary.total} seats open
                     </span>
                   </div>
                   <div style={{ marginTop: '8px' }}>
@@ -336,13 +402,13 @@ export default function DashboardView({ onNavigate, onSignOut, user }) {
                       }}
                     >
                       <span style={{ width: '6px', height: '6px', borderRadius: '50%', backgroundColor: 'var(--tertiary)' }} />
-                      Plenty of room
+                      {capacityLabel}
                     </span>
                   </div>
                 </div>
 
                 <div style={{ width: '100%', height: '6px', backgroundColor: 'var(--surface-container-high)', borderRadius: '9999px', overflow: 'hidden' }}>
-                  <div style={{ width: '60%', height: '100%', backgroundColor: 'var(--tertiary)', borderRadius: '9999px' }} />
+                  <div style={{ width: `${isSeatSummaryLoading ? 0 : occupancyPercent}%`, height: '100%', backgroundColor: occupancyPercent >= 80 ? 'var(--primary)' : 'var(--tertiary)', borderRadius: '9999px', transition: 'width 0.25s ease' }} />
                 </div>
               </div>
 
@@ -410,11 +476,11 @@ export default function DashboardView({ onNavigate, onSignOut, user }) {
                 </div>
 
                 <div className="body-sm" style={{ color: 'var(--on-surface-variant)' }}>
-                  {activeBooking ? 'North Wing • Collab Table' : 'Browse seats to reserve a spot'}
+                  {activeBooking ? 'Enjoy your spot' : 'Browse seats to reserve a spot'}
                 </div>
               </div>
 
-              {/* Stat 3: Upcoming Reserved */}
+              {/* Stat 3: Longest Study Streak */}
               <div
                 style={{
                   backgroundColor: 'var(--surface-container-lowest)',
@@ -429,7 +495,7 @@ export default function DashboardView({ onNavigate, onSignOut, user }) {
               >
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                   <span className="label-md" style={{ color: 'var(--on-surface-variant)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                    Upcoming Reserved
+                    Best Study Streak
                   </span>
                   <span
                     style={{
@@ -442,21 +508,21 @@ export default function DashboardView({ onNavigate, onSignOut, user }) {
                       justifyContent: 'center'
                     }}
                   >
-                    <span className="material-symbols-outlined" style={{ fontSize: '17px' }}>event_upcoming</span>
+                    <span className="material-symbols-outlined" style={{ fontSize: '17px', color: maxStreak > 0 ? '#ed861b' : 'var(--on-surface-variant)' }}>local_fire_department</span>
                   </span>
                 </div>
 
                 <div style={{ margin: '10px 0' }}>
                   <div className="headline-xl" style={{ fontSize: '35px', lineHeight: 1.05, fontWeight: 700, color: 'var(--on-surface)' }}>
-                    {upcoming.length} Scheduled
+                    {maxStreak} {maxStreak === 1 ? 'Day' : 'Days'}
                   </div>
                   <div className="body-sm" style={{ color: 'var(--on-surface-variant)', marginTop: '8px', fontWeight: 500 }}>
-                    Tomorrow, 2:00 PM • Desk E03
+                    Longest consecutive study streak
                   </div>
                 </div>
 
                 <div
-                  onClick={() => onNavigate('my-bookings')}
+                  onClick={() => onNavigate('profile')}
                   style={{
                     color: 'var(--primary)',
                     fontSize: '13px',
@@ -467,7 +533,7 @@ export default function DashboardView({ onNavigate, onSignOut, user }) {
                     cursor: 'pointer'
                   }}
                 >
-                  <span>Review itinerary</span>
+                  <span>View study progress</span>
                   <span className="material-symbols-outlined" style={{ fontSize: '16px' }}>arrow_forward</span>
                 </div>
               </div>
@@ -553,246 +619,6 @@ export default function DashboardView({ onNavigate, onSignOut, user }) {
               </div>
             </section>
 
-            {/* Two-Column Section: Upcoming Bookings & Recent History */}
-            <div
-              style={{
-                display: 'grid',
-                gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))',
-                gap: 'var(--space-lg)'
-              }}
-            >
-              {/* Upcoming Bookings Column */}
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-md)' }}>
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    <span className="material-symbols-outlined" style={{ color: 'var(--primary)', fontSize: '20px' }}>
-                      calendar_month
-                    </span>
-                    <h3 className="headline-sm" style={{ color: 'var(--on-surface)', fontWeight: 600 }}>
-                      Upcoming Bookings
-                    </h3>
-                  </div>
-                  <span className="label-sm" style={{ color: 'var(--on-surface-variant)' }}>
-                    {upcoming.length} Reservations
-                  </span>
-                </div>
-
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                  {upcoming.map((item) => (
-                    <div
-                      key={item.id}
-                      style={{
-                        backgroundColor: 'var(--surface-container-lowest)',
-                        padding: 'var(--space-md)',
-                        borderRadius: 'var(--radius-lg)',
-                        boxShadow: 'var(--shadow-sm)',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'space-between',
-                        border: '1px solid rgba(216, 193, 194, 0.25)'
-                      }}
-                    >
-                      <div>
-                        <span className="label-sm" style={{ color: 'var(--primary)', fontWeight: 700, textTransform: 'uppercase' }}>
-                          {item.date}
-                        </span>
-                        <div className="headline-sm" style={{ color: 'var(--on-surface)', fontWeight: 600, marginTop: '2px' }}>
-                          {item.zoneName}
-                        </div>
-                        <div className="body-sm" style={{ color: 'var(--on-surface-variant)', marginTop: '2px' }}>
-                          {item.time}
-                        </div>
-                      </div>
-
-                      <span
-                        className="label-sm"
-                        style={{
-                          backgroundColor: 'var(--surface-container-low)',
-                          padding: '4px 10px',
-                          borderRadius: 'var(--radius-full)',
-                          color: 'var(--on-surface)',
-                          fontWeight: 500
-                        }}
-                      >
-                        {item.status}
-                      </span>
-                    </div>
-                  ))}
-
-                  {/* Weekend prep card */}
-                  <div
-                    style={{
-                      backgroundColor: 'var(--surface-container-low)',
-                      padding: 'var(--space-md)',
-                      borderRadius: 'var(--radius-lg)',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'space-between',
-                      gap: '12px'
-                    }}
-                  >
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                      <div
-                        style={{
-                          width: '36px',
-                          height: '36px',
-                          borderRadius: '50%',
-                          backgroundColor: 'var(--secondary-container)',
-                          color: 'var(--on-secondary-container)',
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center'
-                        }}
-                      >
-                        <span className="material-symbols-outlined" style={{ fontSize: '18px' }}>auto_awesome</span>
-                      </div>
-                      <div>
-                        <div className="label-lg" style={{ color: 'var(--on-surface)', fontWeight: 600 }}>
-                          Weekend Prep?
-                        </div>
-                        <div className="body-sm" style={{ color: 'var(--on-surface-variant)' }}>
-                          Saturday silent pod slots just opened.
-                        </div>
-                      </div>
-                    </div>
-
-                    <button
-                      type="button"
-                      onClick={() => onNavigate('book-a-seat')}
-                      style={{
-                        padding: '6px 14px',
-                        borderRadius: 'var(--radius-default)',
-                        border: 'none',
-                        backgroundColor: 'var(--surface-container-lowest)',
-                        color: 'var(--primary)',
-                        fontWeight: 600,
-                        fontSize: '12px',
-                        cursor: 'pointer',
-                        boxShadow: 'var(--shadow-xs)'
-                      }}
-                    >
-                      Reserve
-                    </button>
-                  </div>
-                </div>
-              </div>
-
-              {/* Recent Study History Table Column */}
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-md)' }}>
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    <span className="material-symbols-outlined" style={{ color: 'var(--primary)', fontSize: '20px' }}>
-                      history_edu
-                    </span>
-                    <h3 className="headline-sm" style={{ color: 'var(--on-surface)', fontWeight: 600 }}>
-                      Recent Study History
-                    </h3>
-                  </div>
-                  <span
-                    onClick={() => onNavigate('booking-history')}
-                    style={{ color: 'var(--primary)', fontSize: '13px', fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '2px' }}
-                  >
-                    <span>View full log</span>
-                    <span className="material-symbols-outlined" style={{ fontSize: '16px' }}>arrow_forward</span>
-                  </span>
-                </div>
-
-                <div
-                  style={{
-                    backgroundColor: 'var(--surface-container-lowest)',
-                    borderRadius: 'var(--radius-xl)',
-                    boxShadow: 'var(--shadow-sm)',
-                    overflow: 'hidden',
-                    border: '1px solid rgba(216, 193, 194, 0.25)'
-                  }}
-                >
-                  <div style={{ overflowX: 'auto' }}>
-                    <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '13px' }}>
-                      <thead>
-                        <tr style={{ backgroundColor: 'var(--surface-container-low)', color: 'var(--on-surface-variant)', fontSize: '11px', textTransform: 'uppercase' }}>
-                          <th style={{ padding: '10px 16px' }}>Date</th>
-                          <th style={{ padding: '10px 16px' }}>Seat / Zone</th>
-                          <th style={{ padding: '10px 16px' }}>Duration</th>
-                          <th style={{ padding: '10px 16px' }}>Outcome</th>
-                          <th style={{ padding: '10px 16px', textAlign: 'right' }}>Action</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {studyHistory.map((row) => (
-                          <tr key={row.id} style={{ borderBottom: '1px solid rgba(216, 193, 194, 0.15)' }}>
-                            <td style={{ padding: '12px 16px' }}>
-                              <div style={{ fontWeight: 600, color: 'var(--on-surface)' }}>{row.date}</div>
-                              <div style={{ color: 'var(--on-surface-variant)', fontSize: '11px' }}>{row.dateSub}</div>
-                            </td>
-                            <td style={{ padding: '12px 16px' }}>
-                              <div style={{ fontWeight: 600, color: 'var(--on-surface)' }}>{row.seatId}</div>
-                              <div style={{ color: 'var(--on-surface-variant)', fontSize: '11px' }}>{row.zone}</div>
-                            </td>
-                            <td style={{ padding: '12px 16px' }}>
-                              <div style={{ fontWeight: 600, color: 'var(--on-surface)' }}>{row.duration}</div>
-                              <div style={{ color: 'var(--on-surface-variant)', fontSize: '11px' }}>{row.timeWindow}</div>
-                            </td>
-                            <td style={{ padding: '12px 16px' }}>
-                              <span
-                                className="label-sm"
-                                style={{
-                                  backgroundColor: 'var(--tertiary-fixed)',
-                                  color: 'var(--on-tertiary-fixed)',
-                                  padding: '3px 8px',
-                                  borderRadius: 'var(--radius-full)',
-                                  display: 'inline-flex',
-                                  alignItems: 'center',
-                                  gap: '4px',
-                                  fontWeight: 600
-                                }}
-                              >
-                                <span style={{ width: '5px', height: '5px', borderRadius: '50%', backgroundColor: 'var(--tertiary)' }} />
-                                {row.outcome}
-                              </span>
-                            </td>
-                            <td style={{ padding: '12px 16px', textAlign: 'right' }}>
-                              <button
-                                type="button"
-                                title="Re-book desk"
-                                onClick={() => onNavigate('book-a-seat')}
-                                style={{
-                                  border: 'none',
-                                  background: 'transparent',
-                                  color: 'var(--on-surface-variant)',
-                                  cursor: 'pointer',
-                                  padding: '4px'
-                                }}
-                              >
-                                <span className="material-symbols-outlined" style={{ fontSize: '18px' }}>replay</span>
-                              </button>
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-
-                  {/* Summary bar */}
-                  <div
-                    style={{
-                      backgroundColor: 'var(--surface-container-low)',
-                      padding: '10px 16px',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'space-between',
-                      color: 'var(--on-surface-variant)',
-                      fontSize: '12px'
-                    }}
-                  >
-                    <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                      <span className="material-symbols-outlined" style={{ fontSize: '16px', color: 'var(--tertiary)' }}>verified</span>
-                      <span>Avg. check-in punctuality: 98%</span>
-                    </span>
-                    <span>Total 12 sessions logged this semester</span>
-                  </div>
-                </div>
-              </div>
-            </div>
           </div>
         </main>
       </div>

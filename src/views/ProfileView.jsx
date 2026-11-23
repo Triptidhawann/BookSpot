@@ -4,10 +4,10 @@ import Header from '../components/Header';
 import StudyHeatMap from '../components/StudyHeatMap';
 import { currentUser } from '../data/mockData';
 import { API_URL, api } from '../utils/api';
-import starterBadge from '../assets/Screenshot 2026-11-23 153556.png';
-import focusedBadge from '../assets/Screenshot 2026-11-23 153607.png';
-import streakerBadge from '../assets/Screenshot 2026-11-23 153626.png';
-import championBadge from '../assets/Screenshot 2026-11-23 153635.png';
+import starterBadge from '../assets/badge-study-starter.png';
+import focusedBadge from '../assets/badge-focused-learner.png';
+import streakerBadge from '../assets/badge-study-streaker.png';
+import championBadge from '../assets/badge-library-champion.png';
 import './ProfileView.css';
 
 const badgeDefinitions = [

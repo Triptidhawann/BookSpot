@@ -40,6 +40,7 @@ export default function Header({
   user = currentUser
 }) {
   const rollNo = user?.roll_no || user?.rollNo;
+  const avatarInitial = String(user?.name || 'Student').trim().charAt(0).toUpperCase() || 'S';
   const storageKey = useMemo(() => `bookspot_notifications_${rollNo || 'guest'}`, [rollNo]);
   const [notifications, setNotifications] = useState(() => readNotifications(storageKey));
   const [isNotificationOpen, setIsNotificationOpen] = useState(false);
@@ -302,18 +303,26 @@ export default function Header({
               {user.role}
             </div>
           </div>
-          <img
-            src={user.avatar}
-            alt={user.name}
+          <div
+            role="img"
+            aria-label={`${user.name || 'Student'} profile`}
             style={{
               width: '34px',
               height: '34px',
               borderRadius: '50%',
-              objectFit: 'cover',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              backgroundColor: 'var(--primary-container)',
+              color: 'var(--on-primary-container)',
+              fontSize: '14px',
+              fontWeight: 700,
               boxShadow: '0 1px 3px rgba(48, 41, 43, 0.08)',
               border: '1.5px solid var(--surface-container-high)'
             }}
-          />
+          >
+            {avatarInitial}
+          </div>
         </div>
       </div>
     </header>

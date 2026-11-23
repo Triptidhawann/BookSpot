@@ -127,10 +127,7 @@ export default function FloorPlanView({ onNavigate, onSignOut, onBookingConfirme
         duration: bookingDetails.duration,
         status: 'CONFIRMED'
       });
-      
-      if(response.data.msg = "Invalid token"){
-        navigate("/login")
-      }
+
 
       if (!response.data.status) {
         throw new Error(response.data.msg || 'Unable to reserve seat');

@@ -200,10 +200,9 @@ export default function Navbar({ onNavigate, user, authLoading, onSignOut }) {
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
             {!authLoading && (user ? (
               <>
-                <span style={{ display: 'flex', alignItems: 'center', gap: '7px', padding: '6px 10px', color: 'var(--tertiary)', fontSize: '13px', fontWeight: 600 }}>
-                  <span aria-hidden="true" style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: 'var(--tertiary)' }} />
-                  Logged In
-                </span>
+                <button type="button" onClick={() => onNavigate('dashboard')} style={{ border: '1px solid rgba(139, 72, 79, 0.25)', borderRadius: '8px', background: 'var(--surface-container)', color: 'var(--primary)', padding: '6px 12px', fontSize: '14px', fontWeight: 600, cursor: 'pointer' }}>
+                  Dashboard
+                </button>
                 <button type="button" onClick={onSignOut} style={{ border: 'none', background: 'transparent', color: 'var(--on-surface-variant)', padding: '6px 10px', fontSize: '14px', fontWeight: 500, cursor: 'pointer' }}>
                   Logout
                 </button>
@@ -296,10 +295,9 @@ export default function Navbar({ onNavigate, user, authLoading, onSignOut }) {
             </a>
             {!authLoading && (user ? (
               <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginTop: '6px' }}>
-                <span style={{ flex: 1, display: 'flex', alignItems: 'center', gap: '7px', color: 'var(--tertiary)', fontSize: '13px', fontWeight: 600 }}>
-                  <span aria-hidden="true" style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: 'var(--tertiary)' }} />
-                  Logged In
-                </span>
+                <button type="button" onClick={() => { setMobileMenuOpen(false); onNavigate('dashboard'); }} style={{ flex: 1, padding: '8px 12px', borderRadius: 'var(--radius-default)', backgroundColor: 'var(--surface-container-high)', border: 'none', color: 'var(--primary)', fontSize: '13px', fontWeight: 600, cursor: 'pointer' }}>
+                  Dashboard
+                </button>
                 <button type="button" onClick={() => { setMobileMenuOpen(false); onSignOut(); }} style={{ flex: 1, padding: '8px 12px', borderRadius: 'var(--radius-default)', backgroundColor: 'var(--surface-container)', border: '1px solid rgba(216, 193, 194, 0.4)', color: 'var(--on-surface)', fontSize: '13px', fontWeight: 600, cursor: 'pointer' }}>
                   Logout
                 </button>

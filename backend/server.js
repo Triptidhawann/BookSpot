@@ -135,7 +135,7 @@ const handleLogin = async (req, res) => {
         const token = jwt.sign(
             { id: rollNo, role: "student" },
             jwtSecret,
-            { expiresIn: process.env.JWT_EXPIRES_IN || "5m" }
+            { expiresIn: process.env.JWT_EXPIRES_IN || "20m" }
         );
         return res.json({
             status: true,
