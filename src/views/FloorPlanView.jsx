@@ -271,22 +271,7 @@ export default function FloorPlanView({ onNavigate, onSignOut, onBookingConfirme
                   <span style={{ fontWeight: 600 }}>{campusStatus.totalSeats}</span>
                 </div>
 
-                <div
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '6px',
-                    padding: '6px 12px',
-                    borderRadius: 'var(--radius-default)',
-                    backgroundColor: 'rgba(63, 100, 74, 0.12)',
-                    color: 'var(--tertiary)',
-                    fontSize: '13px'
-                  }}
-                >
-                  <span style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: 'var(--tertiary)' }} />
-                  <span style={{ fontWeight: 500 }}>Available:</span>
-                  <span style={{ fontWeight: 700 }}>{campusStatus.availableSeats}</span>
-                </div>
+               
 
                 <div
                   style={{

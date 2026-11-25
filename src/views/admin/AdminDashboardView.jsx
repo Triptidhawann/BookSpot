@@ -2105,11 +2105,11 @@ export default function AdminDashboardView({ onNavigate, adminUser, onAdminAuthe
 
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                     {[
-                      { seatNo: 'C04', zone: 'Collaboration — Cluster C', bookings: 24, percent: 92 },
-                      { seatNo: 'A02', zone: 'Window Nook — Pod A', bookings: 19, percent: 78 },
-                      { seatNo: 'B05', zone: 'Quiet Study — Table B', bookings: 17, percent: 70 },
-                      { seatNo: 'E03', zone: 'Silent Research — Pod E', bookings: 15, percent: 62 },
-                      { seatNo: 'F02', zone: 'Silent Research — Pod F', bookings: 12, percent: 50 }
+                      { seatNo: 'C04', zone: '', bookings: 24, percent: 92 },
+                      { seatNo: 'A02', zone: '', bookings: 19, percent: 78 },
+                      { seatNo: 'B05', zone: '', bookings: 17, percent: 70 },
+                      { seatNo: 'E03', zone: '', bookings: 15, percent: 62 },
+                      { seatNo: 'F02', zone: '', bookings: 12, percent: 50 }
                     ].map((item, idx) => (
                       <div
                         key={item.seatNo}
@@ -2195,11 +2195,22 @@ export default function AdminDashboardView({ onNavigate, adminUser, onAdminAuthe
                           }}
                         >
                           <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                            <img
-                              src={stu.avatar}
-                              alt={stu.name}
-                              style={{ width: '36px', height: '36px', borderRadius: '50%', objectFit: 'cover' }}
-                            />
+                            <div
+                              aria-label={`${stu.name} avatar`}
+                              style={{
+                                width: '36px',
+                                height: '36px',
+                                borderRadius: '50%',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                backgroundColor: '#ebd9db',
+                                color: '#8b484f',
+                                fontWeight: 700
+                              }}
+                            >
+                              {stu.name?.trim()?.charAt(0)?.toUpperCase() || '?'}
+                            </div>
                             <div>
                               <div style={{ fontWeight: 600, color: '#1e1a1d' }}>{stu.name}</div>
                               <div style={{ fontSize: '11px', color: '#6e6366' }}>

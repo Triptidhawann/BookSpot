@@ -14,7 +14,7 @@ export const campusStatus = {
   hours: "24 hrs open",
   activeLevel: "",
   syncSeconds: 12,
-  totalSeats: 112,
+  totalSeats: 86,
   availableSeats: 68,
   occupiedSeats: 36,
   heldSeats: 8,
