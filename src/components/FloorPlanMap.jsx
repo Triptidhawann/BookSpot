@@ -71,7 +71,7 @@ export default function FloorPlanMap({
               Level 2 Blueprint Plan
             </div>
             <div className="label-sm" style={{ color: 'var(--on-surface-variant)', fontSize: '11px' }}>
-              Ref: BLD-02-E • Strict Square Desks • Click any seat for immediate reservation
+              Click any seat for immediate reservation
             </div>
           </div>
         </div>

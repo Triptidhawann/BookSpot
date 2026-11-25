@@ -11,16 +11,6 @@ export default function SignUpView({ onNavigate }) {
   const [errorMessage, setErrorMessage] = useState('');
  
 
-  const handleSsoClick = () => {
-    setFormData({
-      name: 'Alex Morgan',
-      roll_no: 'CS-2024-048',
-      password: 'CampusPass@2025'
-    });
-    setToastMessage('Prefilled institutional SSO credentials. Click Create Student Account to finalize.');
-    setErrorMessage('');
-  };
-
   function handleChange(e){
       setFormData((previous) => ({
         ...previous,
@@ -120,20 +110,20 @@ export default function SignUpView({ onNavigate }) {
             <span className="desktop-only" style={{ height: '16px', width: '1px', backgroundColor: 'rgba(216, 193, 194, 0.6)' }} />
 
             <div className="desktop-only" style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12px', color: 'var(--on-surface-variant)' }}>
-              <span
+              {/* <span
                 style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: 'var(--tertiary)' }}
                 className="animate-pulse-slow"
-              />
-              <span>Main Quad Hall: 142 Desks Available Now</span>
+              /> */}
+              <span></span>
             </div>
           </div>
 
           {/* Right Institutional Badge */}
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '12px', color: 'var(--on-surface-variant)' }}>
-            <span className="material-symbols-outlined" style={{ fontSize: '16px', color: 'var(--tertiary)' }}>
+            {/* <span className="material-symbols-outlined" style={{ fontSize: '16px', color: 'var(--tertiary)' }}>
               verified_user
-            </span>
-            <span className="desktop-only">Institutional SSO v4.2 • Term Spring 2025</span>
+            </span> */}
+            {/* <span className="desktop-only">Institutional SSO v4.2 • Term Spring 2025</span> */}
           </div>
         </div>
       </header>
@@ -348,66 +338,6 @@ export default function SignUpView({ onNavigate }) {
                   </p>
                 </div>
 
-                {/* SSO Button */}
-                <button
-                  type="button"
-                  onClick={handleSsoClick}
-                  style={{
-                    width: '100%',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'space-between',
-                    padding: '10px 16px',
-                    borderRadius: 'var(--radius-default)',
-                    backgroundColor: 'var(--surface-container-low)',
-                    border: '1px solid rgba(216, 193, 194, 0.3)',
-                    color: 'var(--on-surface)',
-                    fontSize: '14px',
-                    fontWeight: 500,
-                    cursor: 'pointer',
-                    boxShadow: 'var(--shadow-xs)',
-                    transition: 'all 0.2s ease'
-                  }}
-                  onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'var(--surface-container)')}
-                  onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'var(--surface-container-low)')}
-                >
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                    <span className="material-symbols-outlined" style={{ fontSize: '20px', color: 'var(--primary)' }}>
-                      account_balance
-                    </span>
-                    <span style={{ fontWeight: 600 }}>Sign up with Institutional SSO</span>
-                  </div>
-                  <span className="material-symbols-outlined" style={{ fontSize: '18px', color: 'var(--on-surface-variant)' }}>
-                    arrow_forward
-                  </span>
-                </button>
-
-                {/* Divider */}
-                <div
-                  style={{
-                    position: 'relative',
-                    margin: '20px 0',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center'
-                  }}
-                >
-                  <div style={{ position: 'absolute', width: '100%', height: '1px', backgroundColor: 'var(--surface-container-high)' }} />
-                  <span
-                    style={{
-                      position: 'relative',
-                      padding: '0 12px',
-                      backgroundColor: 'var(--surface-container-lowest)',
-                      fontSize: '11px',
-                      textTransform: 'uppercase',
-                      letterSpacing: '0.05em',
-                      color: 'var(--on-surface-variant)'
-                    }}
-                  >
-                    or register with student credentials
-                  </span>
-                </div>
-
                 {/* Form */}
                 <form onSubmit={handleFormSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
                   {/* Full Name */}
@@ -429,7 +359,7 @@ export default function SignUpView({ onNavigate }) {
                         value={formData.name}
                         name = "name"
                         onChange={handleChange}
-                        placeholder="e.g. Alex Morgan"
+                        placeholder="e.g. Misha "
                         style={{
                           width: '100%',
                           padding: '10px 12px 10px 38px',
@@ -456,7 +386,7 @@ export default function SignUpView({ onNavigate }) {
                   {/* University Email */}
                   <div>
                     <label htmlFor="signup-email" className="label-sm" style={{ display: 'block', color: 'var(--on-surface)', fontWeight: 600, marginBottom: '6px' }}>
-                      University Email or Campus ID
+                      University Roll Number
                     </label>
                     <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
                       <span
@@ -472,7 +402,7 @@ export default function SignUpView({ onNavigate }) {
                         required
                         value={formData.roll_no}
                         onChange={handleChange}
-                        placeholder="e.g. alex.morgan@univ.edu"
+                        placeholder="e.g. 2410991423"
                         style={{
                           width: '100%',
                           padding: '10px 12px 10px 38px',
@@ -691,12 +621,12 @@ export default function SignUpView({ onNavigate }) {
             color: 'var(--on-surface-variant)'
           }}
         >
-          <p style={{ margin: 0 }}>Interactive Floor Blueprint • ADA Accessible Desks • Help Desk Ext. 4402</p>
+          <p style={{ margin: 0 }}>Interactive Floor Blueprint </p>
           <p style={{ margin: 0, display: 'flex', alignItems: 'center', gap: '6px', opacity: 0.8 }}>
             <span className="material-symbols-outlined" style={{ fontSize: '15px', color: 'var(--tertiary)' }}>
               lock
             </span>
-            <span>Session encrypted via TLS 1.3</span>
+        
           </p>
         </div>
       </footer>

@@ -10,14 +10,6 @@ export default function SignInView({ onNavigate, onAuthenticated }) {
   const [toastMessage, setToastMessage] = useState('');
   const [errorMessage, setErrorMessage] = useState('');
 
-  const handleSsoClick = () => {
-    // Fill demo student account and authenticate
-    setEmail('TEST_01');
-    setPassword('password123');
-    setToastMessage('Prefilled institutional credentials for demo student (TEST_01). Click Sign In below.');
-    setErrorMessage('');
-  };
-
   const handleFormSubmit = async (e) => {
     e.preventDefault();
     setIsLoading(true);
@@ -396,79 +388,6 @@ export default function SignInView({ onNavigate, onAuthenticated }) {
                   <p className="body-md" style={{ color: 'var(--on-surface-variant)', marginTop: '4px', fontSize: '13px', lineHeight: 1.5 }}>
                     Sign in with your university student or faculty account to manage your reservations and seat check-ins.
                   </p>
-                </div>
-
-                {/* Institutional SSO Button */}
-                <button
-                  type="button"
-                  onClick={handleSsoClick}
-                  style={{
-                    width: '100%',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'space-between',
-                    padding: '10px 16px',
-                    borderRadius: 'var(--radius-default)',
-                    backgroundColor: 'var(--surface-container-low)',
-                    border: '1px solid rgba(216, 193, 194, 0.3)',
-                    color: 'var(--on-surface)',
-                    fontSize: '14px',
-                    fontWeight: 500,
-                    cursor: 'pointer',
-                    transition: 'all 0.2s ease',
-                    boxShadow: 'var(--shadow-xs)'
-                  }}
-                  onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'var(--surface-container)')}
-                  onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'var(--surface-container-low)')}
-                >
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                    <div
-                      style={{
-                        width: '26px',
-                        height: '26px',
-                        borderRadius: '4px',
-                        backgroundColor: 'var(--primary)',
-                        color: 'var(--on-primary)',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        fontSize: '12px',
-                        fontWeight: 700
-                      }}
-                    >
-                      U
-                    </div>
-                    <span>Sign in with Institutional Roll Number</span>
-                  </div>
-                  <span className="material-symbols-outlined" style={{ fontSize: '18px', color: 'var(--on-surface-variant)' }}>
-                    arrow_forward
-                  </span>
-                </button>
-
-                {/* Divider */}
-                <div
-                  style={{
-                    position: 'relative',
-                    margin: '22px 0',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center'
-                  }}
-                >
-                  <div style={{ position: 'absolute', width: '100%', height: '1px', backgroundColor: 'var(--surface-container-high)' }} />
-                  <span
-                    style={{
-                      position: 'relative',
-                      padding: '0 12px',
-                      backgroundColor: 'var(--surface-container-lowest)',
-                      fontSize: '11px',
-                      textTransform: 'uppercase',
-                      letterSpacing: '0.05em',
-                      color: 'var(--on-surface-variant)'
-                    }}
-                  >
-                    or sign in with student email
-                  </span>
                 </div>
 
                 {/* Form */}
